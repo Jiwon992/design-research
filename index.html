@@ -135,7 +135,7 @@ body{
   font-family:"ABC Diatype", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Gill Sans MT", "Gill Sans", "Trebuchet MS", sans-serif;
   overflow:visible;
   white-space:nowrap;
-  font-size:15px;
+  font-size:14px;
   line-height:1.35;
   font-weight:400;
   letter-spacing:0;
@@ -1430,13 +1430,6 @@ body{
   overflow:visible !important;
 }
 
-
-
-/* FINAL FLOATING WORD NO-OVERLAP FIX */
-.word{
-  font-size:15px !important;
-}
-
 </style>
 </head>
 
@@ -2133,20 +2126,20 @@ function createWord(base, item, index){
   div.dataset.method = item.method;
   div.dataset.base = base;
 
-  const margin = 55;
+  const margin = 90;
   const viewportTop = window.scrollY;
   const minY = mapRoundTop;
-  const bottomSafeY = window.scrollY + window.innerHeight - 150;
+  const bottomSafeY = window.scrollY + window.innerHeight - 230;
   const maxY = Math.max(minY + 160, Math.min(mapRoundTop + Math.min(440, window.innerHeight * 0.62), bottomSafeY));
   const text = div.innerText;
-  const estimatedWidth = Math.max(54, [...text].length * 8.4 + 18);
-  const estimatedHeight = 28;
+  const estimatedWidth = Math.max(54, [...text].length * 9.5 + 18);
+  const estimatedHeight = 30;
 
   function clamp(value, min, max){
     return Math.max(min, Math.min(max, value));
   }
 
-  function rectsOverlap(a, b, gap = 34){
+  function rectsOverlap(a, b, gap = 26){
     return !(
       a.right + gap < b.left ||
       a.left - gap > b.right ||
@@ -2225,57 +2218,15 @@ function createWord(base, item, index){
   }
 
   if(!chosen){
-    const xStart = Math.max(margin, window.innerWidth * 0.48);
-    const xEnd = window.innerWidth - margin - estimatedWidth;
-    const yStart = minY;
-    const yEnd = maxY - estimatedHeight;
-    const stepX = estimatedWidth + 44;
-    const stepY = estimatedHeight + 36;
-
-    for(let y = yStart; y <= yEnd && !chosen; y += stepY){
-      for(let x = xStart; x <= xEnd && !chosen; x += stepX){
-        if(isSafe(x, y)){
-          chosen = {x, y};
-        }
-      }
-    }
-  }
-
-  if(!chosen){
-    const xStart = Math.max(margin, window.innerWidth * 0.48);
-    const xEnd = window.innerWidth - margin - estimatedWidth;
-    const stepX = estimatedWidth + 44;
-    const stepY = estimatedHeight + 36;
-    let placed = false;
-
-    for(let row = 0; row < 18 && !placed; row++){
-      const y = maxY + 24 + row * stepY;
-      for(let x = xStart; x <= xEnd && !placed; x += stepX){
-        const rect = {
-          left:x,
-          right:x + estimatedWidth,
-          top:y,
-          bottom:y + estimatedHeight
-        };
-        const clear = !getExistingRects().some(existing => rectsOverlap(rect, existing));
-        if(clear){
-          chosen = {x, y};
-          placed = true;
-        }
-      }
-    }
-  }
-
-  if(!chosen){
     chosen = {
-      x: clamp(window.innerWidth * 0.52, margin, window.innerWidth - margin - estimatedWidth),
-      y: maxY + 24 + document.querySelectorAll('.word').length * (estimatedHeight + 36)
+      x: clamp(window.innerWidth * (0.52 + Math.random() * 0.38), margin, window.innerWidth - margin - estimatedWidth),
+      y: clamp(minY + Math.random() * (maxY - minY - estimatedHeight), minY, maxY - estimatedHeight)
     };
   }
 
   div.style.left = `${chosen.x}px`;
   div.style.top = `${chosen.y}px`;
-  div.style.fontSize = `15px`;
+  div.style.fontSize = `${15 + Math.random() * 3}px`;
   div.style.animationDelay = `${index * 0.03}s`;
 
   div.addEventListener("click", (e) => {
