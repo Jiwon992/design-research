@@ -135,7 +135,7 @@ body{
   font-family:"ABC Diatype", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Gill Sans MT", "Gill Sans", "Trebuchet MS", sans-serif;
   overflow:visible;
   white-space:nowrap;
-  font-size:15px;
+  font-size:14px;
   line-height:1.35;
   font-weight:400;
   letter-spacing:0;
@@ -1430,18 +1430,6 @@ body{
   overflow:visible !important;
 }
 
-
-/* FINAL FLOATING WORD SIZE + COLLISION SAFETY */
-.word{
-  font-size:14px !important;
-  line-height:1.35 !important;
-  padding:3px 4px 4px 4px !important;
-  overflow:visible !important;
-}
-.stage{
-  padding-bottom:280px !important;
-}
-
 </style>
 </head>
 
@@ -1562,7 +1550,7 @@ let completedBases = new Set();
 let userCreatedWords = [];
 
 const methods = [
-  "Swap letters with similar-looking or sounding ones",
+  "Swap letters with similar-looking",
   "Hide part of the word",
   "Use words that sound similar",
   "Splitting the word",
@@ -1571,7 +1559,7 @@ const methods = [
 ];
 
 const methodNumbers = {
-  "Swap letters with similar-looking or sounding ones":"1",
+  "Swap letters with similar-looking":"1",
   "Hide part of the word":"2",
   "Use words that sound similar":"3",
   "Splitting the word":"4",
@@ -1903,10 +1891,6 @@ function resetInteractionState(){
 }
 
 function resetPlaySurfaceForNewBase(){
-  suppressAutoScroll = true;
-  window.scrollTo({top:0, left:0, behavior:"auto"});
-  document.documentElement.scrollTop = 0;
-  document.body.scrollTop = 0;
   canvas.innerHTML = "";
   history.innerHTML = "";
   hiddenInput.value = "";
@@ -1918,7 +1902,7 @@ function resetPlaySurfaceForNewBase(){
   locked = false;
   gamePhase = "typingBase";
   mapRound = 0;
-  mapRoundTop = 230;
+  mapRoundTop = getInteractionAnchorY(50);
 }
 
 function getInteractionAnchorY(offset = 40){
@@ -1936,7 +1920,7 @@ function alignMapToTypingArea(offset = 40){
 
   window.scrollTo({
     top: Math.max(0, mapRoundTop - 230),
-    behavior: suppressAutoScroll ? "auto" : "smooth"
+    behavior: "smooth"
   });
 }
 
@@ -1994,13 +1978,6 @@ function startBaseGame(base, fromClick){
       addLine(`Click an altered word floating in the field.`);
       locked = false;
       focusInput();
-      if(suppressAutoScroll){
-        window.scrollTo({top:0, left:0, behavior:"auto"});
-        setTimeout(() => {
-          window.scrollTo({top:0, left:0, behavior:"auto"});
-          suppressAutoScroll = false;
-        }, 80);
-      }
     }, 430);
   };
 
@@ -2149,21 +2126,32 @@ function createWord(base, item, index){
   div.dataset.method = item.method;
   div.dataset.base = base;
 
-  const margin = 55;
+  // Add invisibly first so collision uses the real rendered size.
+  div.style.visibility = "hidden";
+  div.style.opacity = "0";
+  div.style.left = "0px";
+  div.style.top = "0px";
+  canvas.appendChild(div);
+
+  const marginX = 96;
+  const marginBottom = 150;
   const viewportTop = window.scrollY;
-  const minY = mapRoundTop;
-  const bottomSafeY = window.scrollY + window.innerHeight - 230;
-  const maxY = Math.max(minY + 220, Math.min(mapRoundTop + Math.min(520, window.innerHeight * 0.68), bottomSafeY));
-  const text = div.innerText;
-  const estimatedWidth = Math.max(52, [...text].length * 8.4 + 18);
-  const estimatedHeight = 28;
-  const collisionGap = 48;
+  const minY = Math.max(mapRoundTop, viewportTop + 140);
+  let maxY = Math.max(minY + 360, viewportTop + window.innerHeight - marginBottom);
+
+  const measured = div.getBoundingClientRect();
+  const wordWidth = Math.ceil(measured.width) + 6;
+  const wordHeight = Math.ceil(measured.height) + 6;
+
+  const textAreaLimit = window.innerWidth < 900 ? 28 : 760;
+  const leftBound = Math.max(marginX, textAreaLimit + 34, window.innerWidth * 0.44);
+  const rightBound = Math.max(leftBound + wordWidth, window.innerWidth - marginX - wordWidth);
 
   function clamp(value, min, max){
     return Math.max(min, Math.min(max, value));
   }
 
-  function rectsOverlap(a, b, gap = collisionGap){
+  function rectsOverlap(a, b, gap = 36){
     return !(
       a.right + gap < b.left ||
       a.left - gap > b.right ||
@@ -2186,102 +2174,110 @@ function createWord(base, item, index){
       });
   }
 
-  function isSafe(x, y){
+  function isSafe(x, y, gap = 36){
     const rect = {
       left:x,
-      right:x + estimatedWidth,
+      right:x + wordWidth,
       top:y,
-      bottom:y + estimatedHeight
+      bottom:y + wordHeight
     };
 
-    const textAreaLimit = window.innerWidth < 900 ? 28 : 760;
-    const overlapsTextArea = rect.left < textAreaLimit && rect.top < viewportTop + window.innerHeight - 120;
-    if(overlapsTextArea) return false;
-
-    if(rect.left < margin || rect.right > window.innerWidth - margin) return false;
+    if(rect.left < leftBound || rect.right > window.innerWidth - marginX) return false;
     if(rect.top < minY || rect.bottom > maxY) return false;
 
-    return !getExistingRects().some(existing => rectsOverlap(rect, existing));
+    return !getExistingRects().some(existing => rectsOverlap(rect, existing, gap));
   }
 
   const zones = [
-    {x:0.58, y:0.18, w:260, h:120},
-    {x:0.74, y:0.25, w:330, h:160},
-    {x:0.63, y:0.45, w:300, h:190},
-    {x:0.84, y:0.54, w:280, h:170},
-    {x:0.69, y:0.72, w:360, h:170},
-    {x:0.88, y:0.78, w:220, h:120},
-    {x:0.53, y:0.66, w:220, h:130}
+    {x:0.56, y:0.16, w:260, h:120},
+    {x:0.70, y:0.22, w:340, h:140},
+    {x:0.84, y:0.28, w:300, h:150},
+    {x:0.62, y:0.48, w:320, h:170},
+    {x:0.78, y:0.55, w:360, h:170},
+    {x:0.90, y:0.66, w:230, h:150},
+    {x:0.66, y:0.76, w:360, h:160}
   ];
 
   let chosen = null;
 
+  // Random attempts with strict collision checking.
   for(let attempt = 0; attempt < 900; attempt++){
     const existingCount = document.querySelectorAll(".word").length;
     const zone = zones[(existingCount + index + attempt) % zones.length];
-    let x;
-    let y;
+    let x = zone.x * window.innerWidth + (Math.random() - 0.5) * zone.w;
+    let y = minY + zone.y * (maxY - minY) + (Math.random() - 0.5) * zone.h;
 
-    if(attempt < 760){
-      x = zone.x * window.innerWidth + (Math.random() - 0.5) * zone.w;
-      y = minY + zone.y * (maxY - minY) + (Math.random() - 0.5) * zone.h;
-      x += ((index % 5) - 2) * 18;
-      y += ((index % 3) - 1) * 10;
-    }else{
-      x = window.innerWidth * (0.48 + Math.random() * 0.45);
-      y = minY + Math.random() * (maxY - minY - estimatedHeight);
-    }
+    x += ((index % 5) - 2) * 20;
+    y += ((index % 4) - 1.5) * 14;
 
-    x = clamp(x, margin, window.innerWidth - margin - estimatedWidth);
-    y = clamp(y, minY, maxY - estimatedHeight);
+    x = clamp(x, leftBound, window.innerWidth - marginX - wordWidth);
+    y = clamp(y, minY, maxY - wordHeight);
 
-    if(isSafe(x, y)){
+    if(isSafe(x, y, 36)){
       chosen = {x, y};
       break;
     }
   }
 
+  // Deterministic grid fallback: if random placement fails, scan rows.
   if(!chosen){
-    const scanLeft = Math.max(margin, window.innerWidth * 0.48);
-    const scanRight = window.innerWidth - margin - estimatedWidth;
-    const xStep = Math.max(estimatedWidth + collisionGap, 86);
-    const yStep = estimatedHeight + collisionGap;
-    const scanMaxY = minY + 1100;
+    const stepX = Math.max(wordWidth + 54, 120);
+    const stepY = Math.max(wordHeight + 38, 54);
 
-    for(let y = minY; y <= scanMaxY && !chosen; y += yStep){
-      for(let x = scanLeft; x <= scanRight; x += xStep){
-        const jitterX = ((index % 3) - 1) * 6;
-        const jitterY = ((index % 2) - 0.5) * 4;
-        const safeX = clamp(x + jitterX, margin, window.innerWidth - margin - estimatedWidth);
-        const safeY = y + jitterY;
-        if(isSafe(safeX, safeY)){
-          chosen = {x:safeX, y:safeY};
-          break;
+    for(let expansion = 0; expansion < 5 && !chosen; expansion++){
+      if(expansion > 0){
+        maxY += 220;
+      }
+
+      for(let y = minY; y <= maxY - wordHeight && !chosen; y += stepY){
+        const rowShift = ((Math.floor((y - minY) / stepY) + index) % 2) * (stepX / 2);
+
+        for(let x = leftBound + rowShift; x <= window.innerWidth - marginX - wordWidth; x += stepX){
+          if(isSafe(x, y, 28)){
+            chosen = {x, y};
+            break;
+          }
         }
       }
     }
   }
 
+  // Last resort keeps separation as much as possible by extending downward.
   if(!chosen){
-    // Last-resort row placement. This keeps the word readable and separated vertically
-    // instead of allowing a random overlap.
-    const allWords = [...document.querySelectorAll('.word')];
-    const lastBottom = allWords.reduce((max, word) => {
-      const r = word.getBoundingClientRect();
-      return Math.max(max, r.bottom + window.scrollY);
-    }, minY);
+    const stepY = Math.max(wordHeight + 42, 58);
+    let y = maxY + stepY;
+
+    while(!chosen && y < maxY + 1200){
+      for(let x = leftBound; x <= window.innerWidth - marginX - wordWidth; x += Math.max(wordWidth + 60, 130)){
+        const testRect = {left:x, right:x + wordWidth, top:y, bottom:y + wordHeight};
+        const overlaps = getExistingRects().some(existing => rectsOverlap(testRect, existing, 24));
+        if(!overlaps){
+          chosen = {x, y};
+          break;
+        }
+      }
+      y += stepY;
+    }
+  }
+
+  if(!chosen){
     chosen = {
-      x: clamp(window.innerWidth * 0.56, margin, window.innerWidth - margin - estimatedWidth),
-      y: lastBottom + collisionGap
+      x: clamp(leftBound, marginX, window.innerWidth - marginX - wordWidth),
+      y: maxY + Math.max(wordHeight + 42, 58)
     };
   }
 
-  stage.style.minHeight = `${Math.max(stage.offsetHeight, chosen.y + 320)}px`;
-
   div.style.left = `${chosen.x}px`;
   div.style.top = `${chosen.y}px`;
-  div.style.fontSize = `14px`;
+  div.style.visibility = "visible";
+  div.style.opacity = "";
   div.style.animationDelay = `${index * 0.03}s`;
+
+  // Make sure absolutely positioned words below the viewport still have scroll room.
+  const neededHeight = chosen.y + wordHeight + 180;
+  if(stage.offsetHeight < neededHeight){
+    stage.style.minHeight = `${neededHeight}px`;
+  }
 
   div.addEventListener("click", (e) => {
     e.stopImmediatePropagation();
@@ -2289,8 +2285,6 @@ function createWord(base, item, index){
       selectMutation(div, base, item);
     }
   });
-
-  canvas.appendChild(div);
 }
 
 function addMethodList(){
@@ -2514,14 +2508,12 @@ function addLine(text){
 
   history.innerHTML += line + "\n";
 
-  if(!suppressAutoScroll){
-    requestAnimationFrame(() => {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: "smooth"
-      });
+  requestAnimationFrame(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth"
     });
-  }
+  });
 }
 
 function eraseUserOnly(callback){
