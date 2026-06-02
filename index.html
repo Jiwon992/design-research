@@ -135,7 +135,7 @@ body{
   font-family:"ABC Diatype", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Gill Sans MT", "Gill Sans", "Trebuchet MS", sans-serif;
   overflow:visible;
   white-space:nowrap;
-  font-size:14px;
+  font-size:15px;
   line-height:1.35;
   font-weight:400;
   letter-spacing:0;
@@ -1430,6 +1430,18 @@ body{
   overflow:visible !important;
 }
 
+
+/* FINAL FLOATING WORD SIZE + COLLISION SAFETY */
+.word{
+  font-size:14px !important;
+  line-height:1.35 !important;
+  padding:3px 4px 4px 4px !important;
+  overflow:visible !important;
+}
+.stage{
+  padding-bottom:280px !important;
+}
+
 </style>
 </head>
 
@@ -1891,6 +1903,10 @@ function resetInteractionState(){
 }
 
 function resetPlaySurfaceForNewBase(){
+  suppressAutoScroll = true;
+  window.scrollTo({top:0, left:0, behavior:"auto"});
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
   canvas.innerHTML = "";
   history.innerHTML = "";
   hiddenInput.value = "";
@@ -1902,7 +1918,7 @@ function resetPlaySurfaceForNewBase(){
   locked = false;
   gamePhase = "typingBase";
   mapRound = 0;
-  mapRoundTop = getInteractionAnchorY(50);
+  mapRoundTop = 230;
 }
 
 function getInteractionAnchorY(offset = 40){
@@ -1920,7 +1936,7 @@ function alignMapToTypingArea(offset = 40){
 
   window.scrollTo({
     top: Math.max(0, mapRoundTop - 230),
-    behavior: "smooth"
+    behavior: suppressAutoScroll ? "auto" : "smooth"
   });
 }
 
@@ -1978,6 +1994,13 @@ function startBaseGame(base, fromClick){
       addLine(`Click an altered word floating in the field.`);
       locked = false;
       focusInput();
+      if(suppressAutoScroll){
+        window.scrollTo({top:0, left:0, behavior:"auto"});
+        setTimeout(() => {
+          window.scrollTo({top:0, left:0, behavior:"auto"});
+          suppressAutoScroll = false;
+        }, 80);
+      }
     }, 430);
   };
 
@@ -2126,20 +2149,21 @@ function createWord(base, item, index){
   div.dataset.method = item.method;
   div.dataset.base = base;
 
-  const margin = 90;
+  const margin = 55;
   const viewportTop = window.scrollY;
   const minY = mapRoundTop;
   const bottomSafeY = window.scrollY + window.innerHeight - 230;
-  const maxY = Math.max(minY + 160, Math.min(mapRoundTop + Math.min(440, window.innerHeight * 0.62), bottomSafeY));
+  const maxY = Math.max(minY + 220, Math.min(mapRoundTop + Math.min(520, window.innerHeight * 0.68), bottomSafeY));
   const text = div.innerText;
-  const estimatedWidth = Math.max(54, [...text].length * 9.5 + 18);
-  const estimatedHeight = 30;
+  const estimatedWidth = Math.max(52, [...text].length * 8.4 + 18);
+  const estimatedHeight = 28;
+  const collisionGap = 48;
 
   function clamp(value, min, max){
     return Math.max(min, Math.min(max, value));
   }
 
-  function rectsOverlap(a, b, gap = 26){
+  function rectsOverlap(a, b, gap = collisionGap){
     return !(
       a.right + gap < b.left ||
       a.left - gap > b.right ||
@@ -2192,13 +2216,13 @@ function createWord(base, item, index){
 
   let chosen = null;
 
-  for(let attempt = 0; attempt < 340; attempt++){
+  for(let attempt = 0; attempt < 900; attempt++){
     const existingCount = document.querySelectorAll(".word").length;
     const zone = zones[(existingCount + index + attempt) % zones.length];
     let x;
     let y;
 
-    if(attempt < 280){
+    if(attempt < 760){
       x = zone.x * window.innerWidth + (Math.random() - 0.5) * zone.w;
       y = minY + zone.y * (maxY - minY) + (Math.random() - 0.5) * zone.h;
       x += ((index % 5) - 2) * 18;
@@ -2218,15 +2242,45 @@ function createWord(base, item, index){
   }
 
   if(!chosen){
+    const scanLeft = Math.max(margin, window.innerWidth * 0.48);
+    const scanRight = window.innerWidth - margin - estimatedWidth;
+    const xStep = Math.max(estimatedWidth + collisionGap, 86);
+    const yStep = estimatedHeight + collisionGap;
+    const scanMaxY = minY + 1100;
+
+    for(let y = minY; y <= scanMaxY && !chosen; y += yStep){
+      for(let x = scanLeft; x <= scanRight; x += xStep){
+        const jitterX = ((index % 3) - 1) * 6;
+        const jitterY = ((index % 2) - 0.5) * 4;
+        const safeX = clamp(x + jitterX, margin, window.innerWidth - margin - estimatedWidth);
+        const safeY = y + jitterY;
+        if(isSafe(safeX, safeY)){
+          chosen = {x:safeX, y:safeY};
+          break;
+        }
+      }
+    }
+  }
+
+  if(!chosen){
+    // Last-resort row placement. This keeps the word readable and separated vertically
+    // instead of allowing a random overlap.
+    const allWords = [...document.querySelectorAll('.word')];
+    const lastBottom = allWords.reduce((max, word) => {
+      const r = word.getBoundingClientRect();
+      return Math.max(max, r.bottom + window.scrollY);
+    }, minY);
     chosen = {
-      x: clamp(window.innerWidth * (0.52 + Math.random() * 0.38), margin, window.innerWidth - margin - estimatedWidth),
-      y: clamp(minY + Math.random() * (maxY - minY - estimatedHeight), minY, maxY - estimatedHeight)
+      x: clamp(window.innerWidth * 0.56, margin, window.innerWidth - margin - estimatedWidth),
+      y: lastBottom + collisionGap
     };
   }
 
+  stage.style.minHeight = `${Math.max(stage.offsetHeight, chosen.y + 320)}px`;
+
   div.style.left = `${chosen.x}px`;
   div.style.top = `${chosen.y}px`;
-  div.style.fontSize = `${15 + Math.random() * 3}px`;
+  div.style.fontSize = `14px`;
   div.style.animationDelay = `${index * 0.03}s`;
 
   div.addEventListener("click", (e) => {
@@ -2460,12 +2514,14 @@ function addLine(text){
 
   history.innerHTML += line + "\n";
 
-  requestAnimationFrame(() => {
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: "smooth"
+  if(!suppressAutoScroll){
+    requestAnimationFrame(() => {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth"
+      });
     });
-  });
+  }
 }
 
 function eraseUserOnly(callback){
