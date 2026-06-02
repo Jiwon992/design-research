@@ -1430,6 +1430,30 @@ body{
   overflow:visible !important;
 }
 
+
+/* FINAL IMAC ARCHIVE READABILITY + STABLE UI */
+.archive-base-term{
+  font-size:16px !important;
+  line-height:1.25 !important;
+}
+
+.archive-words{
+  font-size:17px !important;
+  line-height:1.62 !important;
+}
+
+.archive-word,
+.archive-word.large,
+.archive-word.soft,
+.archive-word.tiny,
+.archive-word.small,
+.archive-word.blue{
+  font-size:17px !important;
+  line-height:1.55 !important;
+  margin:0 5px 3px 0 !important;
+  letter-spacing:0 !important;
+}
+
 </style>
 </head>
 
@@ -1548,9 +1572,39 @@ let mapRoundTop = 180;
 let currentAlternatives = [];
 let completedBases = new Set();
 let userCreatedWords = [];
+let activeTimeouts = [];
+let activeIntervals = [];
+let playToken = 0;
+
+function schedulePlayWork(callback, delay){
+  const token = playToken;
+  const id = setTimeout(() => {
+    activeTimeouts = activeTimeouts.filter(timeoutId => timeoutId !== id);
+    if(token !== playToken) return;
+    callback();
+  }, delay);
+  activeTimeouts.push(id);
+  return id;
+}
+
+function rememberInterval(id){
+  activeIntervals.push(id);
+  return id;
+}
+
+function forgetInterval(id){
+  activeIntervals = activeIntervals.filter(intervalId => intervalId !== id);
+}
+
+function clearScheduledPlayWork(){
+  activeTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+  activeIntervals.forEach(intervalId => clearInterval(intervalId));
+  activeTimeouts = [];
+  activeIntervals = [];
+}
 
 const methods = [
-  "Swap letters with similar-looking",
+  "Swap letters with similar-looking or sounding ones",
   "Hide part of the word",
   "Use words that sound similar",
   "Splitting the word",
@@ -1559,7 +1613,7 @@ const methods = [
 ];
 
 const methodNumbers = {
-  "Swap letters with similar-looking":"1",
+  "Swap letters with similar-looking or sounding ones":"1",
   "Hide part of the word":"2",
   "Use words that sound similar":"3",
   "Splitting the word":"4",
@@ -1891,6 +1945,8 @@ function resetInteractionState(){
 }
 
 function resetPlaySurfaceForNewBase(){
+  clearScheduledPlayWork();
+  playToken++;
   canvas.innerHTML = "";
   history.innerHTML = "";
   hiddenInput.value = "";
@@ -1903,6 +1959,8 @@ function resetPlaySurfaceForNewBase(){
   gamePhase = "typingBase";
   mapRound = 0;
   mapRoundTop = getInteractionAnchorY(50);
+  stage.style.minHeight = "";
+  window.scrollTo({top:0, behavior:"auto"});
 }
 
 function getInteractionAnchorY(offset = 40){
@@ -1968,9 +2026,9 @@ function startBaseGame(base, fromClick){
 
     addLine(`Algorithm detected:`);
     addLine(`<span class="active-term">${base}</span>`);
-    setTimeout(() => addLine(`The word disappears from the search bar.`), 180);
+    schedulePlayWork(() => addLine(`The word disappears from the search bar.`), 180);
 
-    setTimeout(() => {
+    schedulePlayWork(() => {
       currentAlternatives = getAlternativesForBase(base);
       alignMapToTypingArea(50);
       spreadWords(base, currentAlternatives);
@@ -2107,7 +2165,7 @@ function spreadWords(base, items){
   });
 
   uniqueItems.forEach((item, index) => {
-    setTimeout(() => {
+    schedulePlayWork(() => {
       createWord(base, item, index);
     }, index * 65);
   });
@@ -2309,17 +2367,18 @@ function autoTypeIntoSearch(text, callback){
   userText.classList.remove("erasing");
 
   let i = 0;
-  const interval = setInterval(() => {
+  const interval = rememberInterval(setInterval(() => {
     userText.innerText += text[i];
     hiddenInput.value = userText.innerText;
     i++;
 
     if(i >= text.length){
       clearInterval(interval);
+      forgetInterval(interval);
       if(callback) callback();
       focusInput();
     }
-  }, 65);
+  }, 65));
 }
 
 function selectMutation(element, base, item){
@@ -2372,7 +2431,7 @@ function checkAnswer(answer){
 
   updateScore();
 
-  setTimeout(() => {
+  schedulePlayWork(() => {
     addLine(`Algorithm detected: "${learnedWord}"`);
     addLine(`The word disappears from the search bar.`);
     addToVocabulary(learnedWord);
@@ -2390,7 +2449,7 @@ function checkAnswer(answer){
       alterationLevel++;
       updateCounter();
 
-      setTimeout(() => {
+      schedulePlayWork(() => {
         if(wasCorrect){
           if(answeredElement){
             answeredElement.classList.remove("selected");
@@ -2528,18 +2587,19 @@ function eraseUserOnly(callback){
     return;
   }
 
-  const interval = setInterval(() => {
+  const interval = rememberInterval(setInterval(() => {
     text = text.slice(0, -1);
     userText.innerText = text;
 
     if(text.length <= 0){
       clearInterval(interval);
+      forgetInterval(interval);
       hiddenInput.value = "";
       userText.classList.remove("erasing");
       if(callback) callback();
       focusInput();
     }
-  }, 38);
+  }, 38));
 }
 
 function buildArchiveData(){
