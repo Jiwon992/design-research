@@ -1,0 +1,2674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Censorship Loop</title>
+
+
+
+<style>
+  @font-face{
+  font-family:"ABC Diatype";
+  src:url("./ABCDiatypeUnlicensedTrial-Regular.woff2") format("woff2");
+  font-weight:400;
+  font-style:normal;
+}
+  
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:"ABC Diatype", sans-serif;
+  width:100vw;
+  min-height:100vh;
+  background: white;
+  overflow-x:hidden;
+  overflow-y:auto;
+  color:black;
+}
+
+
+.stage{
+  width:100vw;
+  min-height:100vh;
+  position:relative;
+  padding:55px 55px 180px 55px;
+  cursor:text;
+}
+
+.text-area{
+  position:relative;
+  z-index:50;
+  max-width:720px;
+  margin-top:130px;
+  font-size:14px;
+  line-height:1.42;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+.history{
+  color:black;
+}
+
+.user-text{
+  color:black;
+}
+
+.user-text.erasing{
+  animation:eraseBlink 0.16s steps(2) infinite;
+}
+
+@keyframes eraseBlink{
+  0%{color:black;}
+  50%{color:#4a7cff;}
+  100%{color:black;}
+}
+
+.cursor{
+  display:inline-block;
+  width:3px;
+  height:20px;
+  background:black;
+  margin-left:2px;
+  vertical-align:-4px;
+  animation:blink 0.8s infinite;
+}
+
+@keyframes blink{
+  0%,50%{opacity:1;}
+  51%,100%{opacity:0;}
+}
+
+.hidden-input{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+
+.prompt{
+  position:absolute;
+  left:55px;
+  top:34px;
+  font-size:16px;
+  line-height:1.4;
+  opacity:1;
+  color:black;
+  z-index:80;
+  pointer-events:auto;
+  background:transparent;
+  padding:0;
+  width:auto;
+}
+
+.base-option{
+  cursor:pointer;
+  text-decoration:none;
+  padding:1px 3px 2px 3px;
+}
+
+.base-option:hover{
+  text-decoration:underline;
+}
+
+.base-option.active-base{
+  background:#fff200;
+  color:black;
+  text-decoration:none;
+}
+
+.canvas{
+  position:absolute;
+  inset:0;
+  min-height:100%;
+  z-index:20;
+  pointer-events:none;
+}
+
+.word{
+  position:absolute;
+  z-index:70;
+  font-family:"ABC Diatype", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Gill Sans MT", "Gill Sans", "Trebuchet MS", sans-serif;
+  overflow:visible;
+  white-space:nowrap;
+  font-size:15px;
+  line-height:1.35;
+  font-weight:400;
+  letter-spacing:0;
+  opacity:0;
+  cursor:pointer;
+  pointer-events:auto;
+  user-select:none;
+  background:transparent;
+  padding:3px 4px 4px 4px;
+  animation:appear 0.55s forwards;
+  transition:opacity 0.18s ease;
+}
+
+.word:hover{
+  text-decoration:underline;
+}
+
+.word.selected{
+  text-decoration:underline;
+  z-index:90;
+}
+
+.word.archived{
+  color:#9a9a9a !important;
+  opacity:1 !important;
+  pointer-events:none;
+  text-decoration:none;
+}
+
+.word.learned{
+  color:transparent;
+  opacity:0.82 !important;
+  pointer-events:none;
+  animation:none;
+}
+
+.word.learned::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  top:50%;
+  height:10px;
+  transform:translateY(-50%);
+  background:black;
+}
+
+@keyframes appear{
+  from{opacity:0;transform:translateY(10px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+@keyframes drift{
+  from{margin-left:0;margin-top:0;}
+  to{margin-left:20px;margin-top:-14px;}
+}
+
+.taxonomy{
+  display:none;
+}
+
+.taxonomy.show{
+  display:none;
+}
+
+.taxonomy-line{
+  opacity:0;
+  transform:translateY(6px);
+  animation:lineIn 0.22s forwards;
+  cursor:pointer;
+}
+
+.taxonomy-line:hover{
+  color:#4a7cff;
+  transform:translateX(6px);
+}
+
+.feedback-line{
+  color:#ff4f00;
+}
+
+@keyframes lineIn{
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+.counter{
+  display:none;
+}
+
+.score{
+  display:none;
+}
+
+.score-row{
+  display:block;
+  width:max-content;
+  margin:0 0 4px auto;
+  padding:2px 7px 3px 7px;
+  color:black;
+  font-size:12px;
+  font-weight:600;
+  letter-spacing:-0.2px;
+  text-transform:none;
+}
+
+.score-correct{ background:#9b8cff; }
+.score-learned{ background:#00d5ff; }
+.score-status{ background:#fff200; }
+
+.removed{
+  position:absolute;
+  z-index:90;
+  color:#4a7cff;
+  font-size:11px;
+  opacity:0;
+  pointer-events:none;
+  animation:removedFade 1.7s forwards;
+}
+
+@keyframes removedFade{
+  0%{opacity:0;transform:translateY(6px);}
+  18%{opacity:0.9;transform:translateY(0);}
+  78%{opacity:0.9;}
+  100%{opacity:0;transform:translateY(-7px);}
+}
+
+.overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(255,255,255,0.92);
+  z-index:200;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:0;
+  pointer-events:none;
+  transition:0.5s ease;
+}
+
+.overlay.show{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.result{
+  width:min(820px,86vw);
+  font-size:14px;
+  line-height:1.45;
+}
+
+.result-title{
+  font-size:42px;
+  line-height:1;
+  margin-bottom:22px;
+}
+
+.map{
+  color:#4a7cff;
+  margin-top:24px;
+  max-height:46vh;
+  overflow:auto;
+  white-space:pre-wrap;
+  font-size:12px;
+  line-height:1.35;
+}
+
+.restart{
+  margin-top:24px;
+  display:inline-block;
+  border:1px solid black;
+  padding:10px 14px;
+  font-size:12px;
+  cursor:pointer;
+}
+
+@media(max-width:850px){
+  .stage{
+    padding:35px 28px 180px 28px;
+  }
+
+  .text-area{
+    max-width:100%;
+  }
+
+  .prompt{
+    left:28px;
+  }
+
+  .score{
+    right:28px;
+  }
+
+  .counter{
+    left:28px;
+  }
+
+  .taxonomy{
+    left:28px;
+    right:auto;
+    width:calc(100vw - 56px);
+  }
+}
+
+.answer-feedback{
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index:300;
+  font-size:84px;
+  font-weight:bold;
+  letter-spacing:2px;
+  pointer-events:none;
+  opacity:0;
+  animation:feedbackPop 1.3s forwards;
+}
+
+.answer-feedback.correct{
+  color:#00aa44;
+}
+
+.answer-feedback.wrong{
+  color:#ff0033;
+}
+
+@keyframes feedbackPop{
+  0%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(0.6);
+  }
+  15%{
+    opacity:1;
+    transform:translate(-50%,-50%) scale(1.08);
+  }
+  75%{
+    opacity:1;
+  }
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) scale(1);
+  }
+}
+
+
+.method-list{
+  display:block;
+  margin:6px 0 10px 0;
+  line-height:1.55;
+}
+
+.method-title{
+  color:#ff4f00;
+}
+
+.method-one{ color:#b000ff; }
+.method-two{ color:#0088ff; }
+.method-three{ color:#00a36c; }
+.method-four{ color:#e0a000; }
+.method-five{ color:#ff2f6d; }
+.method-six{ color:#ff7a00; }
+
+.inline-selected{
+  color:#ff4f00;
+  font-weight:bold;
+}
+
+.inline-prompt{
+  color:#ff4f00;
+}
+
+.log-pill{
+  display:inline-block;
+  padding:2px 8px 3px 8px;
+  margin:1px 0;
+  color:black;
+  font-weight:700;
+  letter-spacing:-0.2px;
+  text-transform:none;
+}
+
+.log-detected{ background:transparent; }
+.log-system{ background:#00d5ff; }
+.log-selected{ background:#ff5dc8; }
+
+.log-selected-again{
+  display:inline-block;
+  padding:2px 8px 3px 8px;
+  margin:1px 0;
+  background:#ff5dc8;
+  color:black;
+  font-weight:700;
+  letter-spacing:-0.2px;
+  text-transform:none;
+}
+
+.log-correct{ background:#00ff88; }
+.log-wrong{ background:#ff4a4a; }
+.log-new{ background:#ff7a00; }
+
+.log-muted{
+  color:#8a8a8a;
+}
+
+.active-term{
+  display:inline-block;
+  padding:2px 8px 3px 8px;
+  margin:1px 0;
+  background:#fff200;
+  color:black;
+  font-weight:700;
+  letter-spacing:-0.2px;
+}
+
+.prompt-label{
+  display:inline-block;
+  padding:2px 8px 3px 8px;
+  background:#fff200;
+  color:black;
+  font-weight:700;
+}
+
+.prompt-words{
+  display:inline-block;
+  margin-top:4px;
+  padding:2px 8px 3px 8px;
+  background:#00d5ff;
+  color:black;
+  font-weight:700;
+}
+
+.censorship-list-link{
+  display:inline-block;
+  margin-top:8px;
+  padding:0;
+  background:transparent;
+  color:black;
+  font-family:inherit;
+  font-size:inherit;
+  font-weight:400;
+  cursor:pointer;
+}
+
+.censorship-list-link:hover{
+  text-decoration:underline;
+}
+
+
+.archive-ending{
+  position:fixed;
+  inset:0;
+  background:white;
+  z-index:300;
+  opacity:0;
+  pointer-events:none;
+  transition:0.6s ease;
+  overflow:hidden;
+  font-family:inherit;
+}
+
+.archive-ending.show{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.archive-header{
+  position:absolute;
+  left:42px;
+  right:42px;
+  top:34px;
+  z-index:20;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  color:#4a7cff;
+  font-size:12px;
+  line-height:1.45;
+  letter-spacing:0.5px;
+}
+
+.archive-title{
+  font-size:14px;
+  color:black;
+  letter-spacing:1px;
+}
+
+.archive-stats{
+  text-align:right;
+  color:#4a7cff;
+}
+
+.archive-field{
+  position:absolute;
+  inset:88px 36px 78px 36px;
+  overflow:auto;
+}
+
+.archive-grid{
+  position:relative;
+  left:0;
+  top:0;
+  width:100%;
+  min-height:auto;
+  padding:28px 20px 160px 20px;
+  animation:none;
+}
+
+@keyframes archiveScroll{
+  from{transform:translateY(0);}
+  to{transform:translateY(-42%);}
+}
+
+.archive-group{
+  display:inline;
+}
+
+.archive-base{
+  display:inline-block;
+  color:#4a7cff;
+  font-size:13px;
+  margin:0 22px 18px 0;
+  letter-spacing:1px;
+  text-transform:none;
+  vertical-align:baseline;
+}
+
+.archive-word{
+  display:inline-block;
+  color:black;
+  font-size:30px;
+  line-height:1.45;
+  letter-spacing:1.1px;
+  white-space:nowrap;
+  opacity:0;
+  transform:translateY(10px);
+  animation:wordIn 0.65s forwards;
+  margin:0 24px 20px 0;
+}
+
+.archive-word.small{
+  font-size:18px;
+  opacity:0.52;
+}
+
+.archive-word.blue{
+  color:#111;
+}
+
+.archive-word.large{
+  font-size:46px;
+  letter-spacing:-0.8px;
+}
+
+.archive-word.soft{
+  opacity:0.42;
+}
+
+.archive-word.tiny{
+  font-size:14px;
+  letter-spacing:2.6px;
+}
+
+@keyframes wordIn{
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+.archive-footer{
+  position:absolute;
+  left:42px;
+  right:42px;
+  bottom:28px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  color:#4a7cff;
+  font-size:12px;
+  line-height:1.4;
+}
+
+.restart-archive{
+  border:1px solid black;
+  color:black;
+  background:white;
+  padding:10px 14px;
+  cursor:pointer;
+  font-size:12px;
+}
+
+@media(max-width:900px){
+  .archive-grid{
+    grid-template-columns:1fr;
+  }
+
+  .archive-word{
+    font-size:24px;
+  }
+}
+
+
+.archive-ending{
+  position:fixed;
+  inset:0;
+  background:#ffffff;
+  z-index:300;
+  opacity:0;
+  pointer-events:none;
+  transition:0.6s ease;
+  overflow:hidden;
+  font-family:inherit;
+}
+
+.archive-ending.show{
+  opacity:1;
+  pointer-events:auto;
+}
+
+.archive-header{
+  position:absolute;
+  left:50px;
+  right:50px;
+  top:34px;
+  z-index:30;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  color:#111;
+  font-size:11px;
+  line-height:1.45;
+  letter-spacing:0.2px;
+}
+
+.archive-title{
+  font-size:12px;
+  color:#111;
+  letter-spacing:1px;
+}
+
+.archive-stats{
+  text-align:right;
+  color:#4a7cff;
+}
+
+.archive-field{
+  position:absolute;
+  inset:90px 44px 76px 44px;
+  overflow:auto;
+}
+
+.archive-grid{
+  position:relative;
+  left:0;
+  top:0;
+  width:100%;
+  min-height:auto;
+  padding:34px 8px 140px 8px;
+  animation:none;
+}
+
+@keyframes archiveScroll{
+  from{transform:translateY(0);}
+  to{transform:translateY(-48%);}
+}
+
+.highlight{
+  display:none;
+}
+
+.archive-base-term{
+  display:inline-block;
+  background:#fff200;
+  color:#111;
+  padding:2px 8px 3px 8px;
+  font-weight:700;
+  font-size:15px;
+  letter-spacing:0;
+}
+
+.archive-group{
+  position:relative;
+  display:block;
+  margin-bottom:8px;
+  z-index:5;
+}
+
+.archive-base{
+  color:#111;
+  font-size:15px;
+  text-transform:none;
+  white-space:nowrap;
+  padding-right:0;
+  margin-bottom:2px;
+}
+
+.archive-words{
+  padding-left:0;
+  margin-top:2px;
+  max-width:1100px;
+  line-height:1.25;
+} 
+.archive-word{
+  position:relative;
+  z-index:6;
+  display:inline;
+  color:#111;
+  font-size:15px;
+  letter-spacing:0;
+  white-space:normal;
+  opacity:0;
+  animation:wordIn 0.45s forwards;
+}
+
+.archive-word::after{
+  content:", ";
+}
+
+.archive-word:last-child::after{
+  content:"";
+}
+
+.archive-word.blue{
+  color:#111;
+}
+
+.archive-word.large,
+.archive-word.soft,
+.archive-word.tiny{
+  font-size:15px;
+  letter-spacing:0.2px;
+  opacity:1;
+}
+
+@keyframes wordIn{
+  to{opacity:1;}
+}
+
+.archive-footer{
+  position:absolute;
+  left:50px;
+  right:50px;
+  bottom:30px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  color:#111;
+  font-size:12px;
+  line-height:1.4;
+  z-index:40;
+}
+
+.archive-footer-note{
+  color:#4a7cff;
+}
+
+.restart-archive{
+  border:1px solid #111;
+  color:#111;
+  background:white;
+  padding:10px 14px;
+  cursor:pointer;
+  font-size:12px;
+}
+
+@media(max-width:900px){
+  .archive-grid::before{
+    font-size:70px;
+  }
+
+  .archive-group{
+    display:block;
+    margin-bottom:18px;
+  }
+
+}
+
+
+/* Tighter archive spacing */
+.archive-grid{
+  padding-top:34px !important;
+}
+.archive-group{
+  margin-bottom:8px !important;
+}
+.archive-base{
+  margin-bottom:2px !important;
+}
+.archive-words{
+  margin-top:2px !important;
+  line-height:1.25 !important;
+}
+.archive-word{
+  letter-spacing:0 !important;
+}
+
+
+
+/* Cleaner archive result */
+.archive-title{
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  letter-spacing:0 !important;
+  color:#111 !important;
+}
+
+.archive-stats{
+  color:#111 !important;
+  font-size:12px !important;
+  line-height:1.45 !important;
+  text-align:right !important;
+  letter-spacing:0 !important;
+}
+
+.archive-field{
+  inset:90px 44px 34px 44px !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+}
+
+.archive-grid{
+  position:relative !important;
+  min-height:auto !important;
+  padding:28px 8px 54px 8px !important;
+  animation:none !important;
+}
+
+.archive-group{
+  display:block !important;
+  margin-bottom:16px !important;
+}
+
+.archive-base{
+  display:block !important;
+  margin-bottom:5px !important;
+  padding:0 !important;
+}
+
+.archive-base-term{
+  display:inline-block !important;
+  background:#00d5ff !important;
+  color:#111 !important;
+  padding:2px 8px 3px 8px !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:15px !important;
+  font-weight:700 !important;
+  letter-spacing:0 !important;
+  line-height:1.2 !important;
+}
+
+.archive-words{
+  padding-left:0 !important;
+  margin-top:0 !important;
+  line-height:1.72 !important;
+}
+
+.archive-word{
+  display:inline !important;
+  color:#111 !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:15px !important;
+  line-height:1.72 !important;
+  letter-spacing:0 !important;
+  white-space:normal !important;
+  opacity:1 !important;
+  animation:none !important;
+  transform:none !important;
+}
+
+.archive-word::after{
+  content:", " !important;
+}
+
+.archive-word:last-child::after{
+  content:"" !important;
+}
+
+.archive-footer{
+  position:fixed !important;
+  left:50px !important;
+  right:50px !important;
+  bottom:28px !important;
+  display:flex !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+  z-index:40 !important;
+}
+
+.restart-archive{
+  border:none !important;
+  background:#fff200 !important;
+  color:#111 !important;
+  padding:2px 8px 3px 8px !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:12px !important;
+  font-weight:700 !important;
+  cursor:pointer !important;
+}
+
+
+
+/* FINAL ARCHIVE TYPOGRAPHY OVERRIDE */
+.archive-ending,
+.archive-ending *{
+  font-family:"ABC Diatype", sans-serif !important;
+  letter-spacing:0 !important;
+  text-transform:none !important;
+}
+
+.archive-header{
+  left:55px !important;
+  right:55px !important;
+  top:42px !important;
+  color:#111 !important;
+  align-items:flex-start !important;
+}
+
+.archive-title{
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:14px !important;
+  font-weight:600 !important;
+  line-height:1.35 !important;
+  letter-spacing:0 !important;
+  color:#111 !important;
+}
+
+.archive-stats{
+  font-family:"ABC Diatype", sans-serif !important;
+  color:#111 !important;
+  font-size:12px !important;
+  line-height:1.45 !important;
+  text-align:right !important;
+  letter-spacing:0 !important;
+}
+
+.archive-field{
+  inset:90px 55px 72px 55px !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+}
+
+.archive-grid{
+  position:relative !important;
+  width:100% !important;
+  min-height:auto !important;
+  padding:26px 0 32px 0 !important;
+  animation:none !important;
+}
+
+.archive-group{
+  display:block !important;
+  margin-bottom:15px !important;
+}
+
+.archive-base{
+  display:block !important;
+  margin:0 0 5px 0 !important;
+  padding:0 !important;
+  color:#111 !important;
+  font-size:15px !important;
+  white-space:normal !important;
+}
+
+.archive-base::before{
+  content:"" !important;
+  display:none !important;
+}
+
+.archive-base-term{
+  display:inline-block !important;
+  background:#00d5ff !important;
+  color:#111 !important;
+  padding:2px 8px 3px 8px !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:15px !important;
+  font-weight:600 !important;
+  line-height:1.25 !important;
+  letter-spacing:0 !important;
+}
+
+.archive-words{
+  display:block !important;
+  padding-left:0 !important;
+  margin-top:0 !important;
+  font-size:15px !important;
+  line-height:1.85 !important;
+}
+
+.archive-word,
+.archive-word.large,
+.archive-word.soft,
+.archive-word.tiny,
+.archive-word.small,
+.archive-word.blue{
+  display:inline !important;
+  position:relative !important;
+  color:#111 !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:15px !important;
+  font-weight:400 !important;
+  line-height:1.85 !important;
+  letter-spacing:0 !important;
+  white-space:normal !important;
+  opacity:1 !important;
+  margin:0 !important;
+  padding:0 !important;
+  animation:none !important;
+  transform:none !important;
+}
+
+.archive-word::after{
+  content:", " !important;
+}
+
+.archive-word:last-child::after{
+  content:"" !important;
+}
+
+.archive-footer{
+  position:fixed !important;
+  left:55px !important;
+  right:55px !important;
+  bottom:30px !important;
+  display:flex !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+  color:#111 !important;
+  font-size:12px !important;
+  line-height:1.4 !important;
+  z-index:40 !important;
+}
+
+.restart-archive{
+  display:inline-block !important;
+  border:none !important;
+  background:#fff200 !important;
+  color:#111 !important;
+  padding:2px 8px 3px 8px !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:14px !important;
+  font-weight:400 !important;
+  line-height:1.25 !important;
+  letter-spacing:0 !important;
+  cursor:pointer !important;
+}
+
+
+
+/* FINAL HOVER RATING ARCHIVE OVERRIDE */
+.archive-header{
+  left:55px !important;
+  right:55px !important;
+  top:42px !important;
+  display:flex !important;
+  justify-content:space-between !important;
+  align-items:flex-start !important;
+  color:#111 !important;
+}
+
+.archive-title-wrap{
+  max-width:760px !important;
+}
+
+.archive-title{
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:16px !important;
+  font-weight:600 !important;
+  line-height:1.35 !important;
+  letter-spacing:0 !important;
+  color:#111 !important;
+}
+
+.archive-rating-guide{
+  margin-top:9px !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:16px !important;
+  font-weight:400 !important;
+  line-height:1.55 !important;
+  letter-spacing:0 !important;
+  color:#666 !important;
+}
+
+.archive-rating-guide::first-letter{
+  color:#111;
+}
+
+.archive-stats{
+  font-family:"ABC Diatype", sans-serif !important;
+  color:#111 !important;
+  font-size:12px !important;
+  line-height:1.45 !important;
+  text-align:right !important;
+  letter-spacing:0 !important;
+}
+
+.archive-field{
+  inset:150px 55px 72px 55px !important;
+  overflow-y:auto !important;
+  overflow-x:hidden !important;
+}
+
+.archive-grid{
+  position:relative !important;
+  width:100% !important;
+  min-height:auto !important;
+  padding:26px 0 44px 0 !important;
+  animation:none !important;
+}
+
+.archive-group{
+  display:block !important;
+  margin-bottom:18px !important;
+}
+
+.archive-base{
+  display:block !important;
+  margin:0 0 7px 0 !important;
+  padding:0 !important;
+  color:#111 !important;
+  font-size:15px !important;
+  white-space:normal !important;
+}
+
+.archive-base-term{
+  display:inline-block !important;
+  background:#00d5ff !important;
+  color:#111 !important;
+  padding:2px 8px 3px 8px !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:15px !important;
+  font-weight:600 !important;
+  line-height:1.25 !important;
+  letter-spacing:0 !important;
+}
+
+.archive-words{
+  display:block !important;
+  padding-left:0 !important;
+  margin-top:0 !important;
+  max-width:1180px !important;
+  font-size:15px !important;
+  line-height:2.05 !important;
+}
+
+.archive-word,
+.archive-word.large,
+.archive-word.soft,
+.archive-word.tiny,
+.archive-word.small,
+.archive-word.blue{
+  display:inline-block !important;
+  position:relative !important;
+  color:#111 !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:15px !important;
+  font-weight:400 !important;
+  line-height:1.65 !important;
+  letter-spacing:0 !important;
+  white-space:normal !important;
+  opacity:1 !important;
+  margin:0 8px 6px 0 !important;
+  padding:0 !important;
+  animation:none !important;
+  transform:none !important;
+  cursor:default !important;
+}
+
+.archive-word::after{
+  content:"," !important;
+}
+
+.archive-word:last-child::after{
+  content:"" !important;
+}
+
+.archive-rating{
+  position:absolute !important;
+  left:0 !important;
+  bottom:100% !important;
+  display:flex !important;
+  gap:1px !important;
+  align-items:center !important;
+  padding-bottom:3px !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  z-index:80 !important;
+  transition:opacity 0.12s ease !important;
+  white-space:nowrap !important;
+}
+
+.archive-word:hover .archive-rating{
+  opacity:1 !important;
+}
+
+.archive-rating img{
+  width:15px !important;
+  height:15px !important;
+  object-fit:contain !important;
+  filter:
+    drop-shadow(1px 0 0 #000)
+    drop-shadow(-1px 0 0 #000)
+    drop-shadow(0 1px 0 #000)
+    drop-shadow(0 -1px 0 #000) !important;
+}
+
+.archive-footer{
+  position:fixed !important;
+  left:55px !important;
+  right:55px !important;
+  bottom:30px !important;
+  display:flex !important;
+  justify-content:flex-end !important;
+  align-items:center !important;
+  color:#111 !important;
+  font-size:12px !important;
+  line-height:1.4 !important;
+  z-index:40 !important;
+}
+
+.restart-archive{
+  display:inline-block !important;
+  border:none !important;
+  background:#fff200 !important;
+  color:#111 !important;
+  padding:2px 8px 3px 8px !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:14px !important;
+  font-weight:400 !important;
+  line-height:1.25 !important;
+  letter-spacing:0 !important;
+  cursor:pointer !important;
+}
+
+
+
+/* FINAL requested visual cleanup */
+.censorship-list-link{
+  display:inline-block !important;
+  margin-top:8px !important;
+  padding:2px 8px 3px 8px !important;
+  background:#fff200 !important;
+  color:#111 !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:inherit !important;
+  font-weight:700 !important;
+  line-height:1.25 !important;
+  letter-spacing:0 !important;
+  cursor:pointer !important;
+}
+
+.censorship-list-link:hover{
+  text-decoration:underline !important;
+}
+
+.archive-base-term,
+.restart-archive,
+.prompt-label,
+.prompt-words,
+.active-term,
+.log-pill,
+.log-selected-again{
+  font-weight:700 !important;
+}
+
+.restart-archive{
+  display:inline-block !important;
+  border:none !important;
+  background:#fff200 !important;
+  color:#111 !important;
+  padding:2px 8px 3px 8px !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:14px !important;
+  font-weight:700 !important;
+  line-height:1.25 !important;
+  letter-spacing:0 !important;
+  cursor:pointer !important;
+}
+
+.archive-base-term{
+  font-weight:700 !important;
+}
+
+.archive-word:hover .archive-word-text{
+  text-decoration:underline !important;
+}
+
+.rating-guide-row{
+  display:flex !important;
+  align-items:center !important;
+  flex-wrap:wrap !important;
+  gap:5px 8px !important;
+  margin-top:4px !important;
+}
+
+.guide-stars{
+  display:inline-flex !important;
+  align-items:center !important;
+  gap:1px !important;
+  margin-left:8px !important;
+}
+
+.rating-guide-row .guide-stars:first-of-type{
+  margin-left:0 !important;
+}
+
+.archive-rating-guide img,
+.archive-rating img{
+  width:15px !important;
+  height:15px !important;
+  object-fit:contain !important;
+  filter:
+    drop-shadow(1px 0 0 #000)
+    drop-shadow(-1px 0 0 #000)
+    drop-shadow(0 1px 0 #000)
+    drop-shadow(0 -1px 0 #000) !important;
+}
+
+
+/* CREATE PHASE */
+.log-create{
+  display:inline-block !important;
+  padding:2px 8px 3px 8px !important;
+  margin:1px 0 !important;
+  background:#fff200 !important;
+  color:#111 !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:inherit !important;
+  font-weight:700 !important;
+  line-height:1.25 !important;
+  letter-spacing:0 !important;
+}
+
+
+
+/* USER-CREATED FLOATING WORDS + ARCHIVE BACK BUTTON */
+.word.user-created-word{
+  color:#4a7cff !important;
+  opacity:1 !important;
+}
+
+.word.user-created-word:hover{
+  text-decoration:underline !important;
+}
+
+.archive-word.archive-user-created .archive-word-text{
+  color:#4a7cff !important;
+}
+
+.archive-back-button,
+.restart-archive{
+  display:inline-block !important;
+  border:none !important;
+  background:#fff200 !important;
+  color:#111 !important;
+  padding:2px 8px 3px 8px !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:14px !important;
+  font-weight:700 !important;
+  line-height:1.25 !important;
+  letter-spacing:0 !important;
+  cursor:pointer !important;
+}
+
+
+
+/* FINAL EMOJI CLIPPING FIX */
+.word{
+  overflow:visible !important;
+  line-height:1.35 !important;
+  padding:3px 4px 4px 4px !important;
+  font-family:"ABC Diatype", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important;
+}
+
+.archive-word,
+.archive-word.large,
+.archive-word.soft,
+.archive-word.tiny,
+.archive-word.small,
+.archive-word.blue{
+  overflow:visible !important;
+  line-height:2 !important;
+  padding:1px 1px 2px 1px !important;
+  vertical-align:baseline !important;
+  font-family:"ABC Diatype", "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif !important;
+}
+
+.archive-words{
+  line-height:2.15 !important;
+  overflow:visible !important;
+}
+
+
+
+/* FINAL FLOATING WORD NO-OVERLAP FIX */
+.word{
+  font-size:15px !important;
+}
+
+</style>
+</head>
+
+<body>
+<div class="stage" id="stage" onclick="focusInput()">
+  <div class="prompt">
+    <span class="prompt-label">Click or type a censored term:</span><br>
+    <span class="prompt-words">
+      <span class="base-option" data-base="kill">kill</span> /
+      <span class="base-option" data-base="bomb">bomb</span> /
+      <span class="base-option" data-base="attack">attack</span> /
+      <span class="base-option" data-base="shoot">shoot</span> /
+      <span class="base-option" data-base="murder">murder</span> /
+      <span class="base-option" data-base="suicide">suicide</span> /
+      <span class="base-option" data-base="war">war</span> /
+      <span class="base-option" data-base="sex worker">sex worker</span> /
+      <span class="base-option" data-base="porn star">porn star</span> /
+      <span class="base-option" data-base="homophobia">homophobia</span> /
+      <span class="base-option" data-base="racism">racism</span> /
+      <span class="base-option" data-base="assassinate">assassinate</span> /
+      <span class="base-option" data-base="terrorism">terrorism</span> /
+      <span class="base-option" data-base="trump">trump</span> /
+      <span class="base-option" data-base="genocide">genocide</span> /
+      <span class="base-option" data-base="propaganda">propaganda</span> /
+      <span class="base-option" data-base="censorship">censorship</span>
+    </span><br>
+    <span class="censorship-list-link" id="censorshipListButton">censorship list</span>
+  </div>
+
+  <div class="text-area">
+    <span id="history" class="history"></span><span id="userText" class="user-text"></span><span class="cursor"></span>
+  </div>
+
+  <div class="canvas" id="canvas"></div>
+
+  <div class="taxonomy" id="taxonomy"></div>
+
+  <div class="counter" id="counter">
+    flagged terms learned: 0<br>
+    language keeps changing
+  </div>
+
+  <div class="score" id="score"></div>
+</div>
+
+<div class="archive-ending" id="overlay">
+  <div class="archive-header">
+    <div class="archive-title-wrap">
+      <div class="archive-title">ALTERED LANGUAGE ARCHIVE</div>
+      <div class="archive-rating-guide">
+        <div class="rating-guide-row">
+          <span class="guide-stars" data-stars="1"></span><span>close to the original term</span>
+          <span class="guide-stars" data-stars="2"></span><span>partially altered</span>
+          <span class="guide-stars" data-stars="3"></span><span>transformed</span>
+          <span class="guide-stars" data-stars="4"></span><span>heavily transformed</span>
+        </div>
+      </div>
+    </div>
+    <div class="archive-stats" id="archiveStats"></div>
+  </div>
+
+  <div class="archive-field">
+    <div class="archive-grid" id="archiveGrid"></div>
+  </div>
+
+  <div class="archive-footer">
+    <div id="archiveFooter"></div>
+    <div class="restart-archive archive-back-button" id="archiveBackButton">back</div>
+  </div>
+</div>
+
+<input id="hiddenInput" class="hidden-input" autocomplete="off" spellcheck="false"/>
+
+<script>
+const hiddenInput = document.getElementById("hiddenInput");
+const history = document.getElementById("history");
+const userText = document.getElementById("userText");
+const canvas = document.getElementById("canvas");
+const stage = document.getElementById("stage");
+const taxonomy = document.getElementById("taxonomy");
+const counter = document.getElementById("counter");
+const scoreBox = document.getElementById("score");
+const overlay = document.getElementById("overlay");
+const archiveGrid = document.getElementById("archiveGrid");
+const archiveStats = document.getElementById("archiveStats");
+const archiveFooter = document.getElementById("archiveFooter");
+const starImageSrc = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAWgAAAFoCAMAAABNO5HnAAABZVBMVEUAAADhwCXv1hvpzBzWsDT24xbz3zT15Dfx2jH14hfeuyP35ij45zb35z7v1ybnxhbu0iTrzhv14Bb45h/v1zD25Bj35i/14y3szxv03y7pyQ/XsSfcuSrnxxn35Azy3Crv0xrrzBPpxgj24hL14SXz3ynw2Sjw1h3szxblwALz3CXx2yXu0RfnwwPkvgvz3iLrzAvmwgHy3Bv24yHjuwHPpCT14CLx2Rvu0A3x2Rv04B3z3Bzv1BLkvwHQpCL350jw2BfqyALy2xX36Fr351D24x7w1g3rywLoxQH14h3szQPjvQL46WX03hrx2Q/iuAHv0wTbsRj46W/14Rn03RTu0AL36Xby2xDw1QT36Xz36oTx2AX36oz365Lx2Qbz2wf03gvPpCP37Jnv1SPx2i3y3C/ftALdsgPZsBngtgLYqwbcsAXJmyPJmiHu0yvKmx7RohjasBTOnA/VpgbTognIlhbUphEskF38AAAAcHRSTlMAG0p1A9n////DPv/////O/+Tp//////////8sDrL/////////////////////7f///13//2H///+S/////6P////////////////////////W////////////////////jv////////f////G5//4/ogrFQAAL/FJREFUeNrs1oOBQ0EUQNFvT2zb5jr9dxWjgPmr3FPCHbynAAAAAAAAAAAAAAAAAAAAAAAAAAAA/BmqpuuaaigIk6HqpmVbjqurCkLkuX4ghLCsSNRTEBrN9MWBLSwnFtcUhERLJAMhAtu2LStF6dB4Zto/hs5kspblRHJxT0EIVDOZzAQiCDLZbD7vpHKFaFGBdKVyJelnguASuhqp1RvlkgLZ9OY5tB1k/GyrXe10e42+rkAyz6ykk5nzjfZbrdZg2B0VxhNPgeyP43yhxSX09BB61pjzeUi2aFaSx9DiuHX4y1Po2qwxXq0VSKSalUoy/RB6Mx1uay+zxpzNQybjtVI53WhxC/32vq19HK7055ehQBYvcQ4diN1OiD1756GcthqE0fSeaYzM7QVNSy+QjkY2Eq7gArqiXJz2/g+R3f2WH/0WSWjTV49w5szZ1QonDLpOoLebz3dqD2weblDoP4lzIK8rCrpOoFvbzbc7tReR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";
+
+function populateRatingGuideStars(){
+  document.querySelectorAll(".guide-stars").forEach(holder => {
+    const count = Number(holder.dataset.stars || 0);
+    holder.innerHTML = "";
+    for(let i = 0; i < count; i++){
+      const img = document.createElement("img");
+      img.src = starImageSrc;
+      img.alt = "";
+      holder.appendChild(img);
+    }
+  });
+}
+
+
+let locked = false;
+let currentBase = null;
+let selectedMutation = null;
+let selectedElement = null;
+let vocabularySet = new Set();
+let correct = 0;
+let rounds = 0;
+let alterationLevel = 0;
+let ended = false;
+let playedBaseOrder = [];
+let gamePhase = "typingBase"; // typingBase, chooseAlternative, answerMethod
+let mapRound = 0;
+let mapRoundTop = 180;
+let currentAlternatives = [];
+let completedBases = new Set();
+let userCreatedWords = [];
+
+const methods = [
+  "Swap letters with similar-looking or sounding ones",
+  "Hide part of the word",
+  "Use words that sound similar",
+  "Splitting the word",
+  "Replace with a totally new word",
+  "Change to emoji"
+];
+
+const methodNumbers = {
+  "Swap letters with similar-looking or sounding ones":"1",
+  "Hide part of the word":"2",
+  "Use words that sound similar":"3",
+  "Splitting the word":"4",
+  "Replace with a totally new word":"5",
+  "Change to emoji":"6"
+};
+
+const wordData = {
+  "kill": [
+    {word:"k1ll", method:methods[0]},
+    {word:"k*ll", method:methods[1]},
+    {word:"keel", method:methods[2]},
+    {word:"k i l l", method:methods[3]},
+    {word:"unalive", method:methods[4]},
+    {word:"kyll", method:methods[0]},
+     {word:"take someone", method:methods[4]},
+   {word:"KS", method:methods[1]},
+    {word:"remove them", method:methods[4]},
+        {word:"k!lled", method:methods[0]},
+             {word:"end someone", method:methods[4]},
+                   {word:"take someone out", method:methods[4]},
+                        {word:"sewer slide", method:methods[2]},
+
+  ],
+  "bomb": [
+    {word:"b0mb", method:methods[0]},
+    {word:"b*mb", method:methods[1]},
+    {word:"boom", method:methods[2]},
+    {word:"b o m b", method:methods[3]},
+    {word:"big boom", method:methods[2]},
+    {word:"device", method:methods[4]}
+  ],
+  "attack": [
+    {word:"a7tack", method:methods[0]},
+    {word:"a*tack", method:methods[1]},
+    {word:"uh tack", method:methods[2]},
+    {word:"at tack", method:methods[3]},
+    {word:"go after", method:methods[4]},
+    {word:"rush", method:methods[4]}
+  ],
+  "shoot": [
+    {word:"sh00t", method:methods[0]},
+    {word:"sh**t", method:methods[1]},
+    {word:"pew", method:methods[2]},
+    {word:"s h o o t", method:methods[3]},
+    {word:"fire at", method:methods[4]},
+    {word:"take down", method:methods[4]}
+  ],
+  "murder": [
+    {word:"murd3r", method:methods[0]},
+    {word:"m*rder", method:methods[1]},
+    {word:"merder", method:methods[2]},
+    {word:"mur der", method:methods[3]},
+    {word:"erase", method:methods[4]},
+    {word:"delete", method:methods[4]},
+    {word:"off someone", method:methods[4]}
+  ],
+  "suicide": [
+    {word:"su1cide", method:methods[0]},
+    {word:"s*icide", method:methods[1]},
+    {word:"sewer-side", method:methods[2]},
+    {word:"sui cide", method:methods[3]},
+    {word:"self-delete", method:methods[4]},
+    {word:"disappear", method:methods[4]},
+     {word:"death", method:methods[4]},
+     {word:"selfharm", method:methods[1]},
+          {word:"unalived", method:methods[4]},
+                {word:"shtwt", method:methods[1]},
+                    {word:"s*icide", method:methods[1]},
+                             {word:"end it", method:methods[4]},
+   {word:"end myself", method:methods[4]},
+    {word:"✂️", method:methods[5]},
+      {word:"🪒", method:methods[5]},
+          {word:"🧾", method:methods[5]},
+            {word:"shtwt", method:methods[1]},
+  ],
+   "war": [
+    {word:"w*r", method:methods[1]},
+    {word:"Orcs", method:methods[4]},
+    {word:"crisis", method:methods[4]},
+    {word:"musicians", method:methods[4]},
+    {word:"orchestra", method:methods[4]},
+    {word:"Special millitary operation", method:methods[4]},
+     {word:"Javelins", method:methods[4]},
+     {word:"g*nocide", method:methods[1]},
+          {word:"conflict", method:methods[4]},
+                {word:"crisis", method:methods[4]},
+                    {word:"the situation", method:methods[4]},
+                             {word:"Rashists", method:methods[4]},
+   {word:"⚡️", method:methods[5]},
+    {word:"🌻", method:methods[5]},
+      {word:"🇺🇦", method:methods[5]},
+          {word:"🚜", method:methods[5]},
+  ],
+     "sex worker": [
+    {word:"S*x worker", method:methods[1]},
+    {word:"SW", method:methods[4]},
+    {word:"SX", method:methods[4]},
+    {word:"Adult worker", method:methods[4]},
+    {word:"Smex worker", method:methods[2]},
+    {word:"Skrpper", method:methods[4]},
+    {word:"S3x workers", method:methods[0]},
+    {word:"Sm3ggs worker", method:methods[2]},
+    {word:"$ex worker", method:methods[0]},
+    {word:"S worker", method:methods[1]},
+    {word:"S**worker", method:methods[1]},
+    {word:"CEX worker", method:methods[2]},
+    {word:"soaking xork", method:methods[2]},
+    {word:"Spicy creator", method:methods[4]},
+    {word:"NSFW", method:methods[4]},
+    {word:"18+", method:methods[4]},
+    {word:"21+", method:methods[4]},
+    {word:"💋", method:methods[5]},
+    {word:"💦", method:methods[5]},
+    {word:"🍑", method:methods[5]},
+  ],
+  "porn star": [
+    {word:"Spicy", method:methods[4]},
+    {word:"18+", method:methods[4]},
+    {word:"21+", method:methods[4]},
+    {word:"adultstuff", method:methods[4]},
+    {word:"18 plus", method:methods[2]},
+    {word:"Pron star", method:methods[2]},
+    {word:"O**y fans", method:methods[1]},
+    {word:"XXX", method:methods[4]},
+    {word:"Adult content", method:methods[4]},
+    {word:"****", method:methods[1]},
+    {word:"🌽", method:methods[5]},
+    {word:"🌽⭐️", method:methods[5]},
+    {word:"🔥", method:methods[5]},
+    {word:"S🔥picy", method:methods[5]},
+    {word:"🌶️ content", method:methods[5]},
+  ],
+  "homophobia":[
+    {word:"Homoph0bia", method:methods[0]},
+    {word:"Hmphobia", method:methods[1]},
+    {word:"Homo*phobia", method:methods[1]},
+    {word:"H0moph0bia", method:methods[0]},
+    {word:"Cornucopia", method:methods[4]},
+    {word:"Homofobia", method:methods[2]},
+    {word:"Homophobiya", method:methods[2]},
+    {word:"Queerphobia", method:methods[4]},
+    {word:"Homo-phobia", method:methods[3]},
+    {word:"Homo phobia", method:methods[3]},
+    {word:"🏳️‍🌈❌", method:methods[5]},
+  ],
+  "racism":[
+    {word:"Rac1sm", method:methods[0]},
+    {word:"R*cism", method:methods[1]},
+    {word:"Race bias", method:methods[4]},
+    {word:"Racial hate", method:methods[4]},
+    {word:"Racisim", method:methods[2]},
+    {word:"Race-ism", method:methods[3]},
+    {word:"Racial prejudice", method:methods[4]},
+    {word:"🎭", method:methods[5]},
+  ],
+  "assassinate":[
+    {word:"Assassination", method:methods[4]},
+    {word:"Assassin", method:methods[4]},
+    {word:"Take out", method:methods[4]},
+    {word:"Eliminate", method:methods[4]},
+    {word:"Remove", method:methods[4]},
+    {word:"A*sassinate", method:methods[1]},
+    {word:"A55assinate", method:methods[0]},
+    {word:"🗡️", method:methods[5]},
+  ],
+  "terrorism":[
+    {word:"Terr0rism", method:methods[0]},
+    {word:"T*rrorism", method:methods[1]},
+    {word:"Terror-ism", method:methods[3]},
+    {word:"Extremism", method:methods[4]},
+    {word:"Violent ideology", method:methods[4]},
+    {word:"💣", method:methods[5]},
+  ],
+  "trump":[
+    {word:"The president", method:methods[4]},
+    {word:"45th president", method:methods[4]},
+    {word:"45/47", method:methods[4]},
+    {word:"DJT", method:methods[4]},
+    {word:"Cheeto", method:methods[4]},
+    {word:"🦅", method:methods[5]},
+  ],
+  "genocide":[
+    {word:"Gen0cide", method:methods[0]},
+    {word:"G*nocide", method:methods[1]},
+    {word:"Mass killing", method:methods[4]},
+    {word:"Ethnic cleansing", method:methods[4]},
+    {word:"Population removal", method:methods[4]},
+    {word:"💀", method:methods[5]},
+  ],
+  "propaganda":[
+    {word:"Propag4nda", method:methods[0]},
+    {word:"Narrative", method:methods[4]},
+    {word:"Messaging", method:methods[4]},
+    {word:"Agenda pushing", method:methods[4]},
+    {word:"Influence campaign", method:methods[4]},
+    {word:"📢", method:methods[5]},
+  ],
+  "censorship":[
+    {word:"Content moderation", method:methods[4]},
+    {word:"Filtering", method:methods[4]},
+    {word:"Suppression", method:methods[4]},
+    {word:"Shadow ban", method:methods[4]},
+    {word:"Restricted content", method:methods[4]},
+    {word:"🚫", method:methods[5]},
+  ]
+};
+
+
+const originals = Object.keys(wordData);
+
+window.onload = focusInput;
+document.addEventListener("click", focusInput);
+
+document.querySelectorAll(".base-option").forEach(option => {
+  option.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const base = option.dataset.base;
+    startBaseGame(base, true);
+    focusInput();
+  });
+});
+
+document.getElementById("censorshipListButton").addEventListener("click", (e) => {
+  e.stopPropagation();
+  endGame();
+});
+
+document.getElementById("archiveBackButton").addEventListener("click", (e) => {
+  e.stopPropagation();
+  overlay.classList.remove("show");
+  ended = false;
+  const field = document.querySelector(".archive-field");
+  if(field) field.scrollTop = 0;
+  focusInput();
+});
+
+canvas.addEventListener("click", (e) => {
+  const target = e.target.closest(".word");
+  if(!target) return;
+
+  const item = {
+    word: target.dataset.real,
+    method: target.dataset.method
+  };
+
+  if(gamePhase === "chooseAlternative"){
+    selectMutation(target, target.dataset.base || currentBase, item);
+  }
+});
+
+function focusInput(){
+  hiddenInput.focus();
+}
+
+hiddenInput.addEventListener("input", () => {
+  if(locked || ended) return;
+
+  const typed = hiddenInput.value;
+  userText.innerText = typed;
+  const value = typed.toLowerCase();
+
+  if(gamePhase === "createAlteration"){
+    return;
+  }
+
+  if(gamePhase === "answerMethod" && selectedMutation){
+    const answer = value.trim().slice(-1);
+    if(["1","2","3","4","5","6"].includes(answer)){
+      checkAnswer(answer);
+    }
+    return;
+  }
+
+  if(gamePhase === "chooseAlternative"){
+    const match = currentAlternatives.find(item =>
+      String(item.word).toLowerCase() && value.includes(String(item.word).toLowerCase())
+    );
+
+    if(match){
+      const element = [...document.querySelectorAll(".word")].find(w =>
+        w.dataset.real === match.word && w.dataset.base === currentBase
+      );
+      selectMutation(element, currentBase, match);
+    }
+    return;
+  }
+
+  originals.forEach(word => {
+    if(value.includes(String(word).toLowerCase())){
+      startBaseGame(word, false);
+    }
+  });
+});
+
+hiddenInput.addEventListener("keydown", (e) => {
+  if(ended) return;
+
+  if(gamePhase === "createAlteration" && e.key === "Enter"){
+    e.preventDefault();
+    addUserCreatedAlteration();
+  }
+});
+
+function getNextBase(excludeBase){
+  const available = originals.filter(base => base !== excludeBase);
+  if(available.length === 0) return excludeBase;
+
+  const notRecentlyPlayed = available.filter(base => !playedBaseOrder.includes(base));
+  if(notRecentlyPlayed.length > 0) return randomFrom(notRecentlyPlayed);
+
+  playedBaseOrder = [];
+  return randomFrom(available);
+}
+
+function highlightCurrentBase(base){
+  document.querySelectorAll(".base-option").forEach(option => {
+    option.classList.toggle("active-base", option.dataset.base === base);
+  });
+}
+
+function resetInteractionState(){
+  selectedMutation = null;
+  selectedElement = null;
+  taxonomy.classList.remove("show");
+  hiddenInput.value = "";
+  userText.innerText = "";
+  userText.classList.remove("erasing");
+}
+
+function resetPlaySurfaceForNewBase(){
+  canvas.innerHTML = "";
+  history.innerHTML = "";
+  hiddenInput.value = "";
+  userText.innerText = "";
+  userText.classList.remove("erasing");
+  selectedMutation = null;
+  selectedElement = null;
+  currentAlternatives = [];
+  locked = false;
+  gamePhase = "typingBase";
+  mapRound = 0;
+  mapRoundTop = getInteractionAnchorY(50);
+}
+
+function getInteractionAnchorY(offset = 40){
+  const cursor = document.querySelector(".cursor");
+  if(!cursor){
+    return window.scrollY + 170;
+  }
+
+  const rect = cursor.getBoundingClientRect();
+  return Math.max(170, rect.top + window.scrollY + offset);
+}
+
+function alignMapToTypingArea(offset = 40){
+  mapRoundTop = getInteractionAnchorY(offset);
+
+  window.scrollTo({
+    top: Math.max(0, mapRoundTop - 230),
+    behavior: "smooth"
+  });
+}
+
+function archiveActiveWordsForNewRound(){
+  const activeWords = [...document.querySelectorAll(".word:not(.archived)")];
+
+  if(activeWords.length === 0) return;
+
+  activeWords.forEach(word => {
+    word.classList.add("archived");
+    word.classList.remove("selected");
+    word.style.pointerEvents = "none";
+  });
+
+  mapRound++;
+}
+
+
+
+function startBaseGame(base, fromClick){
+  if(ended) return;
+  if(locked && !fromClick) return;
+  if(!wordData[base]) return;
+
+  const previousBase = currentBase;
+
+  if(fromClick){
+    resetPlaySurfaceForNewBase();
+  }else if(previousBase && previousBase !== base){
+    archiveActiveWordsForNewRound();
+  }
+
+  locked = true;
+  currentBase = base;
+  highlightCurrentBase(base);
+  gamePhase = "typingBase";
+
+  const begin = () => {
+    resetInteractionState();
+    addToVocabulary(base);
+
+    if(!playedBaseOrder.includes(base)){
+      playedBaseOrder.push(base);
+    }
+
+    addLine(`Algorithm detected:`);
+    addLine(`<span class="active-term">${base}</span>`);
+    setTimeout(() => addLine(`The word disappears from the search bar.`), 180);
+
+    setTimeout(() => {
+      currentAlternatives = getAlternativesForBase(base);
+      alignMapToTypingArea(50);
+      spreadWords(base, currentAlternatives);
+      gamePhase = "chooseAlternative";
+      addLine(`Click an altered word floating in the field.`);
+      locked = false;
+      focusInput();
+    }, 430);
+  };
+
+  if(fromClick){
+    hiddenInput.value = "";
+    userText.innerText = "";
+    begin();
+  }else{
+    eraseUserOnly(begin);
+  }
+}
+
+function getAlternativesForBase(base){
+  const items = wordData[base] || [];
+  // Keep the user's researched vocabulary visible; shuffle only the display order.
+  return [...items].sort(() => Math.random() - 0.5);
+}
+
+
+function getVisibleWordKeys(base){
+  return new Set(
+    [...document.querySelectorAll(`.word[data-base="${base}"]`)]
+      .map(word => normalizeWordKey(word.dataset.real))
+  );
+}
+
+function uniqueByWord(items){
+  const seen = new Set();
+  return items.filter(item => {
+    const key = normalizeWordKey(item.word);
+    if(!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function addItemsToWordData(base, items){
+  if(!wordData[base]) return;
+  items.forEach(item => {
+    const exists = wordData[base].some(existing =>
+      normalizeWordKey(existing.word) === normalizeWordKey(item.word)
+    );
+    if(!exists){
+      wordData[base].push(item);
+    }
+  });
+}
+
+function generateMoreAlterations(base, seedWord){
+  const seed = String(seedWord || base || "word").trim();
+  const compact = seed.replace(/\s+/g, "");
+  const half = compact.slice(0, Math.max(1, Math.ceil(compact.length / 2)));
+  const rest = compact.slice(Math.max(1, Math.ceil(compact.length / 2)));
+  const leet = compact
+    .replace(/[oO]/g,"0")
+    .replace(/[iIlL]/g,"1")
+    .replace(/[eE]/g,"3")
+    .replace(/[aA]/g,"4")
+    .replace(/[sS]/g,"$")
+    .replace(/[tT]/g,"7");
+
+  const generated = [
+    {word:compact.replace(/[aeiou]/gi, "*"), method:methods[1]},
+    {word:compact.split("").join(" "), method:methods[3]},
+    {word:leet, method:methods[0]},
+    {word:`${half}-${rest || ""}`.replace(/-$/, ""), method:methods[3]},
+    {word:`${half}*`, method:methods[1]},
+    {word:`${compact.slice(0, 1)}*${compact.slice(2)}`, method:methods[1]},
+    {word:`${compact}!`, method:methods[0]},
+    {word:`${compact}_`, method:methods[3]},
+    {word:`${compact}...`, method:methods[1]},
+    {word:`not ${base}`, method:methods[4]},
+    {word:`the ${base} thing`, method:methods[4]},
+    {word:`${base} coded`, method:methods[4]}
+  ];
+
+  return uniqueByWord(generated)
+    .filter(item => item.word && normalizeWordKey(item.word) !== normalizeWordKey(seed));
+}
+
+function getFreshAlternatives(base, seedWord, minimum = 7){
+  const visible = getVisibleWordKeys(base);
+  const researched = getAlternativesForBase(base);
+  const generated = generateMoreAlterations(base, seedWord);
+  const combined = uniqueByWord([...researched, ...generated]);
+  const fresh = combined.filter(item => !visible.has(normalizeWordKey(item.word)));
+
+  if(fresh.length >= minimum) return fresh;
+
+  // If almost everything has already appeared, keep inventing readable altered forms.
+  const seed = String(seedWord || base || "word").replace(/\s+/g, "");
+  const extras = [];
+  let i = 1;
+  while(fresh.length + extras.length < minimum && i < 40){
+    const candidate = i % 3 === 0
+      ? `${seed.slice(0, Math.max(1, seed.length - 1))}${i}`
+      : i % 3 === 1
+        ? `${seed}-${i}`
+        : `${seed[0] || "x"}${"*".repeat((i % 4) + 1)}${seed.slice(-1)}`;
+    const item = {
+      word:candidate,
+      method:i % 3 === 0 ? methods[0] : i % 3 === 1 ? methods[3] : methods[1]
+    };
+    const key = normalizeWordKey(item.word);
+    if(!visible.has(key) && !fresh.some(f => normalizeWordKey(f.word) === key) && !extras.some(e => normalizeWordKey(e.word) === key)){
+      extras.push(item);
+    }
+    i++;
+  }
+
+  return uniqueByWord([...fresh, ...extras]);
+}
+
+function normalizeWordKey(value){
+  return String(value || "").trim().toLowerCase();
+}
+
+function spreadWords(base, items){
+  const seenThisBatch = new Set();
+  const existingOnScreen = getVisibleWordKeys(base);
+
+  const uniqueItems = items.filter(item => {
+    const key = normalizeWordKey(item.word);
+    if(!key || seenThisBatch.has(key) || existingOnScreen.has(key)) return false;
+    seenThisBatch.add(key);
+    return true;
+  });
+
+  uniqueItems.forEach((item, index) => {
+    setTimeout(() => {
+      createWord(base, item, index);
+    }, index * 65);
+  });
+
+  return uniqueItems.length;
+}
+
+function createWord(base, item, index){
+  const div = document.createElement("div");
+  div.className = "word";
+  if(item.userCreated){
+    div.classList.add("user-created-word");
+  }
+  div.innerText = String(item.word);
+  div.dataset.real = item.word;
+  div.dataset.method = item.method;
+  div.dataset.base = base;
+
+  const margin = 55;
+  const viewportTop = window.scrollY;
+  const minY = mapRoundTop;
+  const bottomSafeY = window.scrollY + window.innerHeight - 150;
+  const maxY = Math.max(minY + 160, Math.min(mapRoundTop + Math.min(440, window.innerHeight * 0.62), bottomSafeY));
+  const text = div.innerText;
+  const estimatedWidth = Math.max(54, [...text].length * 8.4 + 18);
+  const estimatedHeight = 28;
+
+  function clamp(value, min, max){
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function rectsOverlap(a, b, gap = 34){
+    return !(
+      a.right + gap < b.left ||
+      a.left - gap > b.right ||
+      a.bottom + gap < b.top ||
+      a.top - gap > b.bottom
+    );
+  }
+
+  function getExistingRects(){
+    return [...document.querySelectorAll(".word")]
+      .filter(word => word !== div)
+      .map(word => {
+        const r = word.getBoundingClientRect();
+        return {
+          left:r.left + window.scrollX,
+          right:r.right + window.scrollX,
+          top:r.top + window.scrollY,
+          bottom:r.bottom + window.scrollY
+        };
+      });
+  }
+
+  function isSafe(x, y){
+    const rect = {
+      left:x,
+      right:x + estimatedWidth,
+      top:y,
+      bottom:y + estimatedHeight
+    };
+
+    const textAreaLimit = window.innerWidth < 900 ? 28 : 760;
+    const overlapsTextArea = rect.left < textAreaLimit && rect.top < viewportTop + window.innerHeight - 120;
+    if(overlapsTextArea) return false;
+
+    if(rect.left < margin || rect.right > window.innerWidth - margin) return false;
+    if(rect.top < minY || rect.bottom > maxY) return false;
+
+    return !getExistingRects().some(existing => rectsOverlap(rect, existing));
+  }
+
+  const zones = [
+    {x:0.58, y:0.18, w:260, h:120},
+    {x:0.74, y:0.25, w:330, h:160},
+    {x:0.63, y:0.45, w:300, h:190},
+    {x:0.84, y:0.54, w:280, h:170},
+    {x:0.69, y:0.72, w:360, h:170},
+    {x:0.88, y:0.78, w:220, h:120},
+    {x:0.53, y:0.66, w:220, h:130}
+  ];
+
+  let chosen = null;
+
+  for(let attempt = 0; attempt < 340; attempt++){
+    const existingCount = document.querySelectorAll(".word").length;
+    const zone = zones[(existingCount + index + attempt) % zones.length];
+    let x;
+    let y;
+
+    if(attempt < 280){
+      x = zone.x * window.innerWidth + (Math.random() - 0.5) * zone.w;
+      y = minY + zone.y * (maxY - minY) + (Math.random() - 0.5) * zone.h;
+      x += ((index % 5) - 2) * 18;
+      y += ((index % 3) - 1) * 10;
+    }else{
+      x = window.innerWidth * (0.48 + Math.random() * 0.45);
+      y = minY + Math.random() * (maxY - minY - estimatedHeight);
+    }
+
+    x = clamp(x, margin, window.innerWidth - margin - estimatedWidth);
+    y = clamp(y, minY, maxY - estimatedHeight);
+
+    if(isSafe(x, y)){
+      chosen = {x, y};
+      break;
+    }
+  }
+
+  if(!chosen){
+    const xStart = Math.max(margin, window.innerWidth * 0.48);
+    const xEnd = window.innerWidth - margin - estimatedWidth;
+    const yStart = minY;
+    const yEnd = maxY - estimatedHeight;
+    const stepX = estimatedWidth + 44;
+    const stepY = estimatedHeight + 36;
+
+    for(let y = yStart; y <= yEnd && !chosen; y += stepY){
+      for(let x = xStart; x <= xEnd && !chosen; x += stepX){
+        if(isSafe(x, y)){
+          chosen = {x, y};
+        }
+      }
+    }
+  }
+
+  if(!chosen){
+    const xStart = Math.max(margin, window.innerWidth * 0.48);
+    const xEnd = window.innerWidth - margin - estimatedWidth;
+    const stepX = estimatedWidth + 44;
+    const stepY = estimatedHeight + 36;
+    let placed = false;
+
+    for(let row = 0; row < 18 && !placed; row++){
+      const y = maxY + 24 + row * stepY;
+      for(let x = xStart; x <= xEnd && !placed; x += stepX){
+        const rect = {
+          left:x,
+          right:x + estimatedWidth,
+          top:y,
+          bottom:y + estimatedHeight
+        };
+        const clear = !getExistingRects().some(existing => rectsOverlap(rect, existing));
+        if(clear){
+          chosen = {x, y};
+          placed = true;
+        }
+      }
+    }
+  }
+
+  if(!chosen){
+    chosen = {
+      x: clamp(window.innerWidth * 0.52, margin, window.innerWidth - margin - estimatedWidth),
+      y: maxY + 24 + document.querySelectorAll('.word').length * (estimatedHeight + 36)
+    };
+  }
+
+  div.style.left = `${chosen.x}px`;
+  div.style.top = `${chosen.y}px`;
+  div.style.fontSize = `15px`;
+  div.style.animationDelay = `${index * 0.03}s`;
+
+  div.addEventListener("click", (e) => {
+    e.stopImmediatePropagation();
+    if(gamePhase === "chooseAlternative"){
+      selectMutation(div, base, item);
+    }
+  });
+
+  canvas.appendChild(div);
+}
+
+function addMethodList(){
+  addLine(`Type a number that matches how it was changed.`);
+  methods.forEach((method, index) => {
+    addLine(`${index + 1}. ${method}`);
+  });
+}
+
+function showFeedback(type){
+  const div = document.createElement("div");
+  div.className = `answer-feedback ${type}`;
+  div.innerText = type === "correct" ? "CORRECT" : "WRONG";
+  document.body.appendChild(div);
+  setTimeout(() => div.remove(), 1300);
+}
+
+function autoTypeIntoSearch(text, callback){
+  locked = true;
+  hiddenInput.value = "";
+  userText.innerText = "";
+  userText.classList.remove("erasing");
+
+  let i = 0;
+  const interval = setInterval(() => {
+    userText.innerText += text[i];
+    hiddenInput.value = userText.innerText;
+    i++;
+
+    if(i >= text.length){
+      clearInterval(interval);
+      if(callback) callback();
+      focusInput();
+    }
+  }, 65);
+}
+
+function selectMutation(element, base, item){
+  if(ended || gamePhase !== "chooseAlternative") return;
+
+  selectedMutation = item;
+  selectedElement = element;
+  currentBase = base;
+  gamePhase = "selectingAlternative";
+
+  document.querySelectorAll(".word").forEach(w => {
+    w.classList.remove("selected");
+    w.style.pointerEvents = "auto";
+  });
+
+  if(element){
+    element.classList.add("selected");
+  }
+
+  autoTypeIntoSearch(item.word, () => {
+    eraseUserOnly(() => {
+      gamePhase = "answerMethod";
+      locked = false;
+      addMethodList();
+      hiddenInput.value = "";
+      userText.innerText = "";
+      focusInput();
+    });
+  });
+}
+
+function checkAnswer(answer){
+  if(!selectedMutation || ended || locked || gamePhase !== "answerMethod") return;
+
+  locked = true;
+  rounds++;
+
+  const correctAnswer = methodNumbers[selectedMutation.method];
+  const learnedWord = selectedMutation.word;
+  const wasCorrect = answer === correctAnswer;
+
+  if(wasCorrect){
+    correct++;
+    showFeedback("correct");
+    addLine(`CORRECT: "${learnedWord}" = ${selectedMutation.method}`);
+  }else{
+    showFeedback("wrong");
+    addLine(`WRONG  ${learnedWord} = ${selectedMutation.method}`);
+  }
+
+  updateScore();
+
+  setTimeout(() => {
+    addLine(`Algorithm detected: "${learnedWord}"`);
+    addLine(`The word disappears from the search bar.`);
+    addToVocabulary(learnedWord);
+
+    eraseUserOnly(() => {
+      const answeredElement = selectedElement;
+
+      if(answeredElement && !wasCorrect){
+        answeredElement.classList.remove("selected");
+        answeredElement.style.pointerEvents = "auto";
+      }
+
+      selectedMutation = null;
+      selectedElement = answeredElement;
+      alterationLevel++;
+      updateCounter();
+
+      setTimeout(() => {
+        if(wasCorrect){
+          if(answeredElement){
+            answeredElement.classList.remove("selected");
+            answeredElement.style.opacity = "1";
+            answeredElement.style.pointerEvents = "none";
+          }
+
+          completedBases.add(currentBase);
+          selectedElement = null;
+          gamePhase = "createAlteration";
+          addLine(`Now create another altered version using one of the 6 methods.`);
+          hiddenInput.value = "";
+          userText.innerText = "";
+          locked = false;
+          focusInput();
+        }else{
+          gamePhase = "chooseAlternative";
+          addLine(`Click another altered word floating in the field.`);
+          requestAnimationFrame(() => {
+            selectedElement = null;
+            alignMapToTypingArea(50);
+            const newAlternatives = getFreshAlternatives(currentBase, learnedWord, 7);
+            addItemsToWordData(currentBase, newAlternatives);
+            currentAlternatives = uniqueByWord([...currentAlternatives, ...newAlternatives]);
+            spreadWords(currentBase, newAlternatives);
+            locked = false;
+            focusInput();
+          });
+        }
+      }, 620);
+    });
+  }, 450);
+}
+
+function addUserCreatedAlteration(){
+  if(ended || locked || gamePhase !== "createAlteration" || !currentBase) return;
+
+  const createdWord = hiddenInput.value.trim();
+  if(!createdWord) return;
+
+  const existsInData = (wordData[currentBase] || []).some(item =>
+    normalizeWordKey(item.word) === normalizeWordKey(createdWord)
+  );
+
+  const item = {
+    word: createdWord,
+    method: "User-created altered version",
+    userCreated: true
+  };
+
+  if(!existsInData){
+    wordData[currentBase].push(item);
+  }
+
+  currentAlternatives.push(item);
+  userCreatedWords.push({base: currentBase, ...item});
+  addToVocabulary(createdWord);
+
+  alignMapToTypingArea(50);
+  createWord(currentBase, item, document.querySelectorAll(`.word[data-base="${currentBase}"]`).length + 1);
+  addLine(`Added to the floating field.`);
+
+  eraseUserOnly(() => {
+    gamePhase = "createAlteration";
+    locked = false;
+    hiddenInput.value = "";
+    userText.innerText = "";
+    focusInput();
+  });
+}
+
+function addToVocabulary(word){
+  vocabularySet.add(word);
+  updateCounter();
+}
+
+function updateCounter(){
+  updateScore();
+}
+
+function updateScore(){
+  scoreBox.innerHTML = "";
+}
+
+function addLine(text){
+  let line = text;
+  const isMethodLine = /^\d+\.\s/.test(text);
+
+  if(text.includes("active-term")){
+    line = text;
+  }
+  else if(text.includes("Now create another altered version")){
+    line = `<span class="log-create">${text}</span>`;
+  }
+  else if(text.includes("Added to the floating field")){
+    line = `<span class="log-muted">${text}</span>`;
+  }
+  else if(text.includes("Click another altered word")){
+    line = `<span class="log-selected-again">${text}</span>`;
+  }
+  else if(text.includes("Click an altered word")){
+    line = `<span class="log-pill log-selected">${text}</span>`;
+  }
+  else if(text.includes("Type a number")){
+    line = `<span class="log-pill log-system">${text}</span>`;
+  }else if(text === "CORRECT"){
+    line = `<span class="log-pill log-correct">${text}</span>`;
+  }else if(text === "WRONG"){
+    line = `<span class="log-pill log-wrong">${text}</span>`;
+  }else if(isMethodLine){
+    line = `<span>${text}</span>`;
+  }else{
+    line = `<span class="log-muted">${text}</span>`;
+  }
+
+  history.innerHTML += line + "\n";
+
+  requestAnimationFrame(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth"
+    });
+  });
+}
+
+function eraseUserOnly(callback){
+  userText.classList.add("erasing");
+  let text = userText.innerText;
+
+  if(text.length === 0){
+    hiddenInput.value = "";
+    userText.classList.remove("erasing");
+    if(callback) callback();
+    focusInput();
+    return;
+  }
+
+  const interval = setInterval(() => {
+    text = text.slice(0, -1);
+    userText.innerText = text;
+
+    if(text.length <= 0){
+      clearInterval(interval);
+      hiddenInput.value = "";
+      userText.classList.remove("erasing");
+      if(callback) callback();
+      focusInput();
+    }
+  }, 38);
+}
+
+function buildArchiveData(){
+  // Archive now mirrors the floating field data exactly.
+  // User-created and newly generated wrong-answer words are already saved into wordData.
+  return wordData;
+}
+
+function renderArchiveGroup(base, items, duplicateIndex){
+  const group = document.createElement("div");
+  group.className = "archive-group";
+
+  const title = document.createElement("div");
+  title.className = "archive-base";
+
+  const baseTerm = document.createElement("span");
+  baseTerm.className = "archive-base-term";
+  baseTerm.innerText = base;
+  title.appendChild(baseTerm);
+
+  group.appendChild(title);
+
+  const words = document.createElement("div");
+  words.className = "archive-words";
+
+  items.forEach((item, index) => {
+    const line = document.createElement("span");
+    line.className = "archive-word";
+    if(item.userCreated){
+      line.classList.add("archive-user-created");
+    }
+    line.style.animationDelay = `${(duplicateIndex * 0.08) + (index * 0.035)}s`;
+
+    const wordText = document.createElement("span");
+    wordText.className = "archive-word-text";
+    wordText.innerText = item.word;
+    line.appendChild(wordText);
+
+    const rating = document.createElement("span");
+    rating.className = "archive-rating";
+    rating.setAttribute("aria-label", `${getRatingCount(item, base)} out of 4 transformation rating`);
+
+    const starCount = getRatingCount(item, base);
+    for(let s = 0; s < starCount; s++){
+      const img = document.createElement("img");
+      img.src = starImageSrc;
+      img.alt = "";
+      rating.appendChild(img);
+    }
+
+    line.appendChild(rating);
+    words.appendChild(line);
+  });
+
+  group.appendChild(words);
+  return group;
+}
+
+function populateArchive(){
+  populateRatingGuideStars();
+  const archiveData = buildArchiveData();
+  const learned = [...vocabularySet];
+  archiveGrid.innerHTML = "";
+  const entries = Object.entries(archiveData);
+
+
+  const rows = [];
+  entries.forEach(([base, items]) => rows.push([base, items]));
+
+
+  rows.forEach(([base, items], duplicateIndex) => {
+    archiveGrid.appendChild(renderArchiveGroup(base, items, duplicateIndex));
+  });
+
+  const wrong = Math.max(0, rounds - correct);
+
+  archiveStats.innerHTML =
+    `${correct} correct<br>` +
+    `${wrong} wrong`;
+
+  archiveFooter.innerHTML =
+    `<span></span>`;
+
+  document.querySelector(".archive-field").scrollTop = 0;
+}
+
+function endGame(){
+  ended = true;
+  populateArchive();
+  overlay.classList.add("show");
+}
+
+function getRatingCount(item, base){
+  const word = String(item.word || "").toLowerCase();
+  const method = item.method;
+
+  const closeWords = [
+    "k1ll", "kyll", "b0mb", "a7tack", "sh00t", "murd3r", "su1cide",
+    "homoph0bia", "h0moph0bia", "s3x workers", "$ex worker", "rac1sm", "a55assinate", "terr0rism",
+    "gen0cide", "propag4nda"
+  ];
+
+  const alteredWords = [
+    "k*ll", "b*mb", "a*tack", "sh**t", "m*rder", "s*icide", "w*r",
+    "g*nocide", "s*x worker", "s worker", "s**worker", "homo*phobia", "hmphobia",
+    "r*cism", "a*sassinate", "t*rrorism"
+  ];
+
+  const transformedWords = [
+    "keel", "boom", "uh tack", "pew", "merder", "sewer-side",
+    "smex worker", "sm3ggs worker", "cex worker", "soaking xork", "homofobia", "homophobiya", "racisim", "race-ism",
+    "terror-ism", "pron star"
+  ];
+
+  if(item.userCreated) return 4;
+  if(closeWords.includes(word)) return 1;
+  if(alteredWords.includes(word)) return 2;
+  if(transformedWords.includes(word)) return 3;
+
+  if(method === methods[0]) return 1;
+  if(method === methods[1] || method === methods[3]) return 2;
+  if(method === methods[2]) return 3;
+  return 4;
+}
+
+function randomFrom(arr){
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+</script>
+</body>
+</html>
