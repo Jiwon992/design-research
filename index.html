@@ -1454,6 +1454,41 @@ body{
   letter-spacing:0 !important;
 }
 
+
+
+/* FINAL 110% ARCHIVE SCALE OVERRIDE — archive only, floating words unchanged */
+.archive-title{
+  font-size:17px !important;
+  line-height:1.35 !important;
+}
+
+.archive-rating-guide{
+  font-size:17px !important;
+  line-height:1.55 !important;
+}
+
+.archive-base-term{
+  font-size:17px !important;
+  line-height:1.25 !important;
+}
+
+.archive-words{
+  font-size:17px !important;
+  line-height:1.62 !important;
+}
+
+.archive-word,
+.archive-word.large,
+.archive-word.soft,
+.archive-word.tiny,
+.archive-word.small,
+.archive-word.blue{
+  font-size:17px !important;
+  line-height:1.55 !important;
+  margin:0 5px 3px 0 !important;
+  letter-spacing:0 !important;
+}
+
 </style>
 </head>
 
@@ -1461,6 +1496,7 @@ body{
 <div class="stage" id="stage" onclick="focusInput()">
   <div class="prompt">
     <span class="prompt-label">Click or type a censored term:</span><br>
+
     <span class="prompt-words">
       <span class="base-option" data-base="kill">kill</span> /
       <span class="base-option" data-base="bomb">bomb</span> /
@@ -1604,7 +1640,7 @@ function clearScheduledPlayWork(){
 }
 
 const methods = [
-  "Swap letters with similar-looking or sounding ones",
+  "Swap letters with similar looking",
   "Hide part of the word",
   "Use words that sound similar",
   "Splitting the word",
@@ -1613,7 +1649,7 @@ const methods = [
 ];
 
 const methodNumbers = {
-  "Swap letters with similar-looking or sounding ones":"1",
+  "Swap letters with similar looking":"1",
   "Hide part of the word":"2",
   "Use words that sound similar":"3",
   "Splitting the word":"4",
