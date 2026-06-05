@@ -1373,6 +1373,28 @@ body{
 
 
 
+
+
+/* NEXT TERM BUTTON AFTER USER CREATION */
+.next-term-button{
+  display:inline-block !important;
+  margin-top:6px !important;
+  padding:2px 8px 3px 8px !important;
+  background:#00d5ff !important;
+  color:#111 !important;
+  font-family:"ABC Diatype", sans-serif !important;
+  font-size:inherit !important;
+  font-weight:700 !important;
+  line-height:1.25 !important;
+  letter-spacing:0 !important;
+  cursor:pointer !important;
+}
+
+.next-term-button:hover{
+  text-decoration:underline !important;
+}
+
+
 /* USER-CREATED FLOATING WORDS + ARCHIVE BACK BUTTON */
 .word.user-created-word{
   color:#4a7cff !important;
@@ -1927,6 +1949,18 @@ document.getElementById("archiveBackButton").addEventListener("click", (e) => {
   focusInput();
 });
 
+document.addEventListener("click", (e) => {
+  const button = e.target.closest(".next-term-button");
+  if(!button) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const nextBase = button.dataset.nextBase || getNextBase(currentBase);
+  startBaseGame(nextBase, true);
+  focusInput();
+});
+
 canvas.addEventListener("click", (e) => {
   const target = e.target.closest(".word");
   if(!target) return;
@@ -2003,6 +2037,23 @@ function getNextBase(excludeBase){
 
   playedBaseOrder = [];
   return randomFrom(available);
+}
+
+function addNextTermButton(){
+  const nextBase = getNextBase(currentBase);
+
+  document.querySelectorAll(".next-term-button").forEach(button => button.remove());
+
+  const safeBase = String(nextBase).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  history.innerHTML += `<span class="next-term-button" data-next-base="${safeBase}">next term: ${safeBase}</span>
+`;
+
+  requestAnimationFrame(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth"
+    });
+  });
 }
 
 function highlightCurrentBase(base){
@@ -2593,6 +2644,7 @@ function addUserCreatedAlteration(){
     locked = false;
     hiddenInput.value = "";
     userText.innerText = "";
+    addNextTermButton();
     focusInput();
   });
 }
