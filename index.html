@@ -1373,28 +1373,6 @@ body{
 
 
 
-
-
-/* NEXT TERM BUTTON AFTER USER CREATION */
-.next-term-button{
-  display:inline-block !important;
-  margin-top:6px !important;
-  padding:2px 8px 3px 8px !important;
-  background:#00d5ff !important;
-  color:#111 !important;
-  font-family:"ABC Diatype", sans-serif !important;
-  font-size:inherit !important;
-  font-weight:700 !important;
-  line-height:1.25 !important;
-  letter-spacing:0 !important;
-  cursor:pointer !important;
-}
-
-.next-term-button:hover{
-  text-decoration:underline !important;
-}
-
-
 /* USER-CREATED FLOATING WORDS + ARCHIVE BACK BUTTON */
 .word.user-created-word{
   color:#4a7cff !important;
@@ -1513,42 +1491,154 @@ body{
 
 
 
-/* FINAL ONE-LINE ARCHIVE RATING GUIDE */
-.archive-title-wrap{
-  max-width:calc(100vw - 320px) !important;
-  overflow:visible !important;
+/* PROMPT SPACING FIX — match blue term gap with censorship list gap */
+.prompt .prompt-words{
+  margin-top:8px !important;
 }
 
-.archive-rating-guide{
-  white-space:nowrap !important;
-  overflow:visible !important;
+
+/* PORTFOLIO MOBILE OVERRIDE — iPhone-sized screens */
+@media (max-width: 700px){
+  html,
+  body{
+    width:100%;
+    min-height:100%;
+    overflow-x:hidden !important;
+  }
+
+  body{
+    -webkit-text-size-adjust:100%;
+  }
+
+  .stage{
+    width:100%;
+    min-height:100svh;
+    padding:22px 18px 150px 18px !important;
+    overflow-x:hidden !important;
+  }
+
+  .prompt{
+    position:relative !important;
+    left:auto !important;
+    top:auto !important;
+    width:100% !important;
+    max-width:none !important;
+    font-size:14px !important;
+    line-height:1.45 !important;
+    z-index:120 !important;
+  }
+
+  .prompt-label,
+  .prompt-words,
+  .censorship-list-link{
+    max-width:100% !important;
+  }
+
+  .prompt-words{
+    display:inline-block !important;
+    margin-top:8px !important;
+    line-height:1.55 !important;
+    white-space:normal !important;
+  }
+
+  .base-option{
+    display:inline-block !important;
+    padding:3px 4px 4px 4px !important;
+  }
+
+  .censorship-list-link{
+    margin-top:8px !important;
+  }
+
+  .text-area{
+    max-width:100% !important;
+    margin-top:42px !important;
+    font-size:14px !important;
+    line-height:1.5 !important;
+    position:relative !important;
+    z-index:50 !important;
+  }
+
+  .canvas{
+    inset:0 !important;
+    min-height:100% !important;
+    overflow:visible !important;
+  }
+
+  .word{
+    font-size:14px !important;
+    line-height:1.35 !important;
+    padding:4px 5px 5px 5px !important;
+    z-index:90 !important;
+    touch-action:manipulation !important;
+  }
+
+  .answer-feedback{
+    font-size:46px !important;
+  }
+
+  .archive-header{
+    left:18px !important;
+    right:18px !important;
+    top:22px !important;
+    display:block !important;
+  }
+
+  .archive-title-wrap{
+    max-width:100% !important;
+  }
+
+  .archive-title,
+  .archive-rating-guide{
+    font-size:14px !important;
+  }
+
+  .archive-stats{
+    margin-top:8px !important;
+    text-align:left !important;
+  }
+
+  .archive-field{
+    inset:150px 18px 70px 18px !important;
+  }
+
+  .archive-base-term,
+  .archive-word,
+  .archive-word.large,
+  .archive-word.soft,
+  .archive-word.tiny,
+  .archive-word.small,
+  .archive-word.blue{
+    font-size:14px !important;
+  }
+
+  .archive-footer{
+    left:18px !important;
+    right:18px !important;
+    bottom:22px !important;
+  }
 }
 
-.rating-guide-row{
-  display:flex !important;
-  align-items:center !important;
-  flex-wrap:nowrap !important;
-  gap:5px 8px !important;
-  white-space:nowrap !important;
-  width:max-content !important;
-  max-width:none !important;
-}
 
-.rating-guide-row span{
-  white-space:nowrap !important;
-  flex:0 0 auto !important;
-}
 
-.guide-stars{
-  display:inline-flex !important;
-  align-items:center !important;
-  gap:1px !important;
-  flex:0 0 auto !important;
-  margin-left:12px !important;
-}
+/* MOBILE SPLIT-SCREEN FIX — instructions and floating words are separate zones */
+@media (max-width: 700px){
+  .stage{
+    padding-bottom:260px !important;
+  }
 
-.rating-guide-row .guide-stars:first-of-type{
-  margin-left:0 !important;
+  .text-area{
+    background:white !important;
+    padding-bottom:18px !important;
+  }
+
+  .canvas{
+    z-index:35 !important;
+  }
+
+  .word{
+    z-index:60 !important;
+  }
 }
 
 </style>
@@ -1558,7 +1648,6 @@ body{
 <div class="stage" id="stage" onclick="focusInput()">
   <div class="prompt">
     <span class="prompt-label">Click or type a censored term:</span><br>
-
     <span class="prompt-words">
       <span class="base-option" data-base="kill">kill</span> /
       <span class="base-option" data-base="bomb">bomb</span> /
@@ -1702,7 +1791,7 @@ function clearScheduledPlayWork(){
 }
 
 const methods = [
-  "Swap letters with similar looking",
+  "Swap letters with similar-looking or sounding ones",
   "Hide part of the word",
   "Use words that sound similar",
   "Splitting the word",
@@ -1711,7 +1800,7 @@ const methods = [
 ];
 
 const methodNumbers = {
-  "Swap letters with similar looking":"1",
+  "Swap letters with similar-looking or sounding ones":"1",
   "Hide part of the word":"2",
   "Use words that sound similar":"3",
   "Splitting the word":"4",
@@ -1949,18 +2038,6 @@ document.getElementById("archiveBackButton").addEventListener("click", (e) => {
   focusInput();
 });
 
-document.addEventListener("click", (e) => {
-  const button = e.target.closest(".next-term-button");
-  if(!button) return;
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  const nextBase = button.dataset.nextBase || getNextBase(currentBase);
-  startBaseGame(nextBase, true);
-  focusInput();
-});
-
 canvas.addEventListener("click", (e) => {
   const target = e.target.closest(".word");
   if(!target) return;
@@ -2037,23 +2114,6 @@ function getNextBase(excludeBase){
 
   playedBaseOrder = [];
   return randomFrom(available);
-}
-
-function addNextTermButton(){
-  const nextBase = getNextBase(currentBase);
-
-  document.querySelectorAll(".next-term-button").forEach(button => button.remove());
-
-  const safeBase = String(nextBase).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  history.innerHTML += `<span class="next-term-button" data-next-base="${safeBase}">next term: ${safeBase}</span>
-`;
-
-  requestAnimationFrame(() => {
-    window.scrollTo({
-      top: document.body.scrollHeight,
-      behavior: "smooth"
-    });
-  });
 }
 
 function highlightCurrentBase(base){
@@ -2318,19 +2378,47 @@ function createWord(base, item, index){
   div.style.top = "0px";
   canvas.appendChild(div);
 
-  const marginX = 96;
-  const marginBottom = 150;
+  const isMobile = window.innerWidth <= 700;
+  const marginX = isMobile ? 18 : 96;
+  const marginBottom = isMobile ? 120 : 150;
   const viewportTop = window.scrollY;
-  const minY = Math.max(mapRoundTop, viewportTop + 140);
-  let maxY = Math.max(minY + 360, viewportTop + window.innerHeight - marginBottom);
+
+  // Keep floating words out of the instruction / answer area.
+  // This is especially important on iPhone-sized screens, where the prompt
+  // and the “algorithm detected / choose one of six” text use the full width.
+  function getProtectedBottom(){
+    const protectedNodes = [
+      document.querySelector(".prompt"),
+      document.querySelector(".text-area")
+    ].filter(Boolean);
+
+    return protectedNodes.reduce((bottom, node) => {
+      const r = node.getBoundingClientRect();
+      return Math.max(bottom, r.bottom + window.scrollY);
+    }, viewportTop);
+  }
+
+  const protectedGap = isMobile ? 34 : 24;
+  const protectedBottom = getProtectedBottom();
+  const minY = isMobile
+    ? Math.max(mapRoundTop, protectedBottom + protectedGap, viewportTop + Math.round(window.innerHeight * 0.44))
+    : Math.max(mapRoundTop, protectedBottom + protectedGap, viewportTop + 140);
+  let maxY = isMobile
+    ? Math.max(minY + 360, viewportTop + window.innerHeight - marginBottom)
+    : Math.max(minY + 360, viewportTop + window.innerHeight - marginBottom);
 
   const measured = div.getBoundingClientRect();
   const wordWidth = Math.ceil(measured.width) + 6;
   const wordHeight = Math.ceil(measured.height) + 6;
 
   const textAreaLimit = window.innerWidth < 900 ? 28 : 760;
-  const leftBound = Math.max(marginX, textAreaLimit + 34, window.innerWidth * 0.44);
-  const rightBound = Math.max(leftBound + wordWidth, window.innerWidth - marginX - wordWidth);
+  const leftBound = isMobile
+    ? Math.max(marginX, Math.round((window.innerWidth - Math.min(window.innerWidth - marginX * 2, 320)) / 2))
+    : Math.max(marginX, textAreaLimit + 34, window.innerWidth * 0.44);
+  const rightEdge = isMobile
+    ? Math.min(window.innerWidth - marginX, leftBound + Math.min(window.innerWidth - marginX * 2, 320))
+    : window.innerWidth - marginX;
+  const rightBound = Math.max(leftBound + wordWidth, rightEdge - wordWidth);
 
   function clamp(value, min, max){
     return Math.max(min, Math.min(max, value));
@@ -2345,18 +2433,30 @@ function createWord(base, item, index){
     );
   }
 
+  function rectFromNode(node, pad = 0){
+    const r = node.getBoundingClientRect();
+    return {
+      left:r.left + window.scrollX - pad,
+      right:r.right + window.scrollX + pad,
+      top:r.top + window.scrollY - pad,
+      bottom:r.bottom + window.scrollY + pad
+    };
+  }
+
   function getExistingRects(){
     return [...document.querySelectorAll(".word")]
       .filter(word => word !== div)
-      .map(word => {
-        const r = word.getBoundingClientRect();
-        return {
-          left:r.left + window.scrollX,
-          right:r.right + window.scrollX,
-          top:r.top + window.scrollY,
-          bottom:r.bottom + window.scrollY
-        };
-      });
+      .map(word => rectFromNode(word));
+  }
+
+  function getProtectedRects(){
+    const pad = isMobile ? 18 : 12;
+    return [
+      document.querySelector(".prompt"),
+      document.querySelector(".text-area")
+    ]
+      .filter(Boolean)
+      .map(node => rectFromNode(node, pad));
   }
 
   function isSafe(x, y, gap = 36){
@@ -2367,13 +2467,22 @@ function createWord(base, item, index){
       bottom:y + wordHeight
     };
 
-    if(rect.left < leftBound || rect.right > window.innerWidth - marginX) return false;
+    if(rect.left < leftBound || rect.right > rightEdge) return false;
     if(rect.top < minY || rect.bottom > maxY) return false;
+
+    const hitsInstructionArea = getProtectedRects().some(protectedRect => rectsOverlap(rect, protectedRect, 0));
+    if(hitsInstructionArea) return false;
 
     return !getExistingRects().some(existing => rectsOverlap(rect, existing, gap));
   }
 
-  const zones = [
+  const zones = isMobile ? [
+    {x:0.50, y:0.06, w:170, h:90},
+    {x:0.43, y:0.22, w:180, h:100},
+    {x:0.57, y:0.34, w:180, h:110},
+    {x:0.48, y:0.52, w:190, h:110},
+    {x:0.55, y:0.70, w:180, h:100}
+  ] : [
     {x:0.56, y:0.16, w:260, h:120},
     {x:0.70, y:0.22, w:340, h:140},
     {x:0.84, y:0.28, w:300, h:150},
@@ -2389,13 +2498,13 @@ function createWord(base, item, index){
   for(let attempt = 0; attempt < 900; attempt++){
     const existingCount = document.querySelectorAll(".word").length;
     const zone = zones[(existingCount + index + attempt) % zones.length];
-    let x = zone.x * window.innerWidth + (Math.random() - 0.5) * zone.w;
+    let x = (isMobile ? leftBound + zone.x * (rightEdge - leftBound) : zone.x * window.innerWidth) + (Math.random() - 0.5) * zone.w;
     let y = minY + zone.y * (maxY - minY) + (Math.random() - 0.5) * zone.h;
 
     x += ((index % 5) - 2) * 20;
     y += ((index % 4) - 1.5) * 14;
 
-    x = clamp(x, leftBound, window.innerWidth - marginX - wordWidth);
+    x = clamp(x, leftBound, rightBound);
     y = clamp(y, minY, maxY - wordHeight);
 
     if(isSafe(x, y, 36)){
@@ -2417,7 +2526,7 @@ function createWord(base, item, index){
       for(let y = minY; y <= maxY - wordHeight && !chosen; y += stepY){
         const rowShift = ((Math.floor((y - minY) / stepY) + index) % 2) * (stepX / 2);
 
-        for(let x = leftBound + rowShift; x <= window.innerWidth - marginX - wordWidth; x += stepX){
+        for(let x = leftBound + rowShift; x <= rightBound; x += stepX){
           if(isSafe(x, y, 28)){
             chosen = {x, y};
             break;
@@ -2433,7 +2542,7 @@ function createWord(base, item, index){
     let y = maxY + stepY;
 
     while(!chosen && y < maxY + 1200){
-      for(let x = leftBound; x <= window.innerWidth - marginX - wordWidth; x += Math.max(wordWidth + 60, 130)){
+      for(let x = leftBound; x <= rightBound; x += Math.max(wordWidth + 60, 130)){
         const testRect = {left:x, right:x + wordWidth, top:y, bottom:y + wordHeight};
         const overlaps = getExistingRects().some(existing => rectsOverlap(testRect, existing, 24));
         if(!overlaps){
@@ -2447,7 +2556,7 @@ function createWord(base, item, index){
 
   if(!chosen){
     chosen = {
-      x: clamp(leftBound, marginX, window.innerWidth - marginX - wordWidth),
+      x: clamp(leftBound, marginX, rightBound),
       y: maxY + Math.max(wordHeight + 42, 58)
     };
   }
@@ -2470,6 +2579,55 @@ function createWord(base, item, index){
       selectMutation(div, base, item);
     }
   });
+}
+
+
+function pushFloatingWordsBelowInstruction(){
+  const isMobile = window.innerWidth <= 700;
+  if(!isMobile) return;
+
+  const protectedNodes = [
+    document.querySelector(".prompt"),
+    document.querySelector(".text-area")
+  ].filter(Boolean);
+
+  const protectedBottom = protectedNodes.reduce((bottom, node) => {
+    const r = node.getBoundingClientRect();
+    return Math.max(bottom, r.bottom + window.scrollY);
+  }, window.scrollY);
+
+  const safeTop = protectedBottom + 34;
+  const words = [...document.querySelectorAll(".word:not(.archived)")];
+  if(words.length === 0) return;
+
+  const rows = [];
+  const rowGap = 44;
+
+  words
+    .sort((a, b) => parseFloat(a.style.top || 0) - parseFloat(b.style.top || 0))
+    .forEach((word, index) => {
+      const rect = word.getBoundingClientRect();
+      const currentTop = parseFloat(word.style.top || (rect.top + window.scrollY));
+      const wordHeight = Math.ceil(rect.height) || 24;
+      let nextTop = Math.max(currentTop, safeTop);
+
+      // Keep a little vertical breathing room so pushed words do not stack on top of each other.
+      for(const rowTop of rows){
+        if(Math.abs(nextTop - rowTop) < rowGap){
+          nextTop = rowTop + rowGap;
+        }
+      }
+
+      // Small stagger keeps the field from becoming one rigid column.
+      nextTop += (index % 3) * 4;
+      rows.push(nextTop);
+      word.style.top = `${nextTop}px`;
+
+      const neededHeight = nextTop + wordHeight + 180;
+      if(stage.offsetHeight < neededHeight){
+        stage.style.minHeight = `${neededHeight}px`;
+      }
+    });
 }
 
 function addMethodList(){
@@ -2530,6 +2688,9 @@ function selectMutation(element, base, item){
       gamePhase = "answerMethod";
       locked = false;
       addMethodList();
+      requestAnimationFrame(() => {
+        pushFloatingWordsBelowInstruction();
+      });
       hiddenInput.value = "";
       userText.innerText = "";
       focusInput();
@@ -2644,7 +2805,6 @@ function addUserCreatedAlteration(){
     locked = false;
     hiddenInput.value = "";
     userText.innerText = "";
-    addNextTermButton();
     focusInput();
   });
 }
@@ -2856,6 +3016,166 @@ function getRatingCount(item, base){
 function randomFrom(arr){
   return arr[Math.floor(Math.random() * arr.length)];
 }
+
+
+/* MOBILE SPLIT-FIELD OVERRIDE
+   On iPhone-sized screens, the instruction log and floating word field are treated
+   as two separate physical zones. Words are always placed below the current
+   instruction area, then reflowed whenever instruction text grows. */
+(function(){
+  const MOBILE_MAX = 700;
+  const originalCreateWord = createWord;
+  const originalAddLine = addLine;
+
+  function isMobileSplit(){
+    return window.innerWidth <= MOBILE_MAX;
+  }
+
+  function mobileInstructionBottom(){
+    const nodes = [
+      document.querySelector('.prompt'),
+      document.querySelector('.text-area')
+    ].filter(Boolean);
+
+    return nodes.reduce((bottom, node) => {
+      const r = node.getBoundingClientRect();
+      return Math.max(bottom, r.bottom + window.scrollY);
+    }, window.scrollY + 180);
+  }
+
+  function mobileFieldTop(){
+    return Math.ceil(mobileInstructionBottom() + 54);
+  }
+
+  function rectsOverlapMobile(a, b, gap){
+    return !(a.right + gap < b.left || a.left - gap > b.right || a.bottom + gap < b.top || a.top - gap > b.bottom);
+  }
+
+  function mobilePlaceWord(div, index){
+    const margin = 22;
+    const fieldTop = mobileFieldTop();
+    const measured = div.getBoundingClientRect();
+    const wordWidth = Math.ceil(measured.width || 80) + 8;
+    const wordHeight = Math.ceil(measured.height || 24) + 8;
+    const fieldWidth = Math.max(1, window.innerWidth - margin * 2);
+    const maxX = Math.max(margin, window.innerWidth - margin - wordWidth);
+    const existing = [...document.querySelectorAll('.word')]
+      .filter(word => word !== div)
+      .map(word => {
+        const r = word.getBoundingClientRect();
+        return {
+          left:r.left + window.scrollX,
+          right:r.right + window.scrollX,
+          top:r.top + window.scrollY,
+          bottom:r.bottom + window.scrollY
+        };
+      });
+
+    let chosen = null;
+    const centerX = window.innerWidth / 2;
+    const bandHeight = 560;
+
+    for(let attempt = 0; attempt < 700 && !chosen; attempt++){
+      const spread = Math.min(fieldWidth * 0.82, 330);
+      const x = Math.max(margin, Math.min(maxX, centerX - wordWidth / 2 + (Math.random() - 0.5) * spread));
+      const y = fieldTop + 24 + Math.random() * bandHeight + ((index % 4) * 9);
+      const rect = {left:x, right:x + wordWidth, top:y, bottom:y + wordHeight};
+      if(!existing.some(other => rectsOverlapMobile(rect, other, 28))){
+        chosen = {x, y};
+      }
+    }
+
+    if(!chosen){
+      const cols = 2;
+      const colWidth = fieldWidth / cols;
+      const row = Math.floor(index / cols);
+      const col = index % cols;
+      const x = Math.max(margin, Math.min(maxX, margin + col * colWidth + (colWidth - wordWidth) / 2 + ((row % 2) * 10 - 5)));
+      const y = fieldTop + 34 + row * 66;
+      chosen = {x, y};
+    }
+
+    div.style.left = `${chosen.x}px`;
+    div.style.top = `${chosen.y}px`;
+
+    const neededHeight = chosen.y + wordHeight + 260;
+    if(stage.offsetHeight < neededHeight){
+      stage.style.minHeight = `${neededHeight}px`;
+    }
+  }
+
+  function reflowMobileWords(){
+    if(!isMobileSplit()) return;
+    const words = [...document.querySelectorAll('.word:not(.archived)')];
+    if(words.length === 0) return;
+
+    const fieldTop = mobileFieldTop();
+    let maxBottom = fieldTop;
+
+    words.forEach((word, index) => {
+      const r = word.getBoundingClientRect();
+      const currentTop = parseFloat(word.style.top || (r.top + window.scrollY));
+      if(currentTop < fieldTop){
+        mobilePlaceWord(word, index);
+      }
+      const nr = word.getBoundingClientRect();
+      maxBottom = Math.max(maxBottom, nr.bottom + window.scrollY);
+    });
+
+    if(stage.offsetHeight < maxBottom + 260){
+      stage.style.minHeight = `${maxBottom + 260}px`;
+    }
+  }
+
+  createWord = function(base, item, index){
+    if(!isMobileSplit()){
+      return originalCreateWord(base, item, index);
+    }
+
+    const div = document.createElement('div');
+    div.className = 'word';
+    if(item.userCreated){
+      div.classList.add('user-created-word');
+    }
+    div.innerText = String(item.word);
+    div.dataset.real = item.word;
+    div.dataset.method = item.method;
+    div.dataset.base = base;
+    div.style.visibility = 'hidden';
+    div.style.opacity = '0';
+    div.style.left = '0px';
+    div.style.top = '0px';
+    canvas.appendChild(div);
+
+    mobilePlaceWord(div, index);
+
+    div.style.visibility = 'visible';
+    div.style.opacity = '';
+    div.style.animationDelay = `${index * 0.03}s`;
+
+    div.addEventListener('click', (e) => {
+      e.stopImmediatePropagation();
+      if(gamePhase === 'chooseAlternative'){
+        selectMutation(div, base, item);
+      }
+    });
+
+    requestAnimationFrame(reflowMobileWords);
+  };
+
+  addLine = function(text){
+    originalAddLine(text);
+    requestAnimationFrame(() => {
+      reflowMobileWords();
+      setTimeout(reflowMobileWords, 90);
+    });
+  };
+
+  window.addEventListener('resize', () => {
+    requestAnimationFrame(reflowMobileWords);
+  });
+})();
+
 </script>
 </body>
 </html>
